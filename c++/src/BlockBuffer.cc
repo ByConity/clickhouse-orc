@@ -34,7 +34,7 @@ namespace orc {
 
   BlockBuffer::~BlockBuffer() {
     for (size_t i = 0; i < blocks.size(); ++i) {
-      memoryPool.free(blocks[i]);
+      memoryPool.free(blocks[i], blockSize);
     }
     blocks.clear();
     currentSize = currentCapacity = 0;
@@ -121,7 +121,7 @@ namespace orc {
         output->write(chunk, chunkOffset);
         ++ioCount;
       }
-      memoryPool.free(chunk);
+      memoryPool.free(chunk, chunkSize);
     }
 
     if (metrics != nullptr) {

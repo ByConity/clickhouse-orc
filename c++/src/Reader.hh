@@ -263,7 +263,6 @@ namespace orc {
     uint64_t getMemoryUse(int stripeIx, std::vector<bool>& selectedColumns);
 
     // internal methods
-    void readMetadata() const;
     void checkOrcVersion();
     void getRowIndexStatistics(
         const proto::StripeInformation& stripeInfo, uint64_t stripeIndex,
@@ -284,6 +283,8 @@ namespace orc {
     ReaderImpl(std::shared_ptr<FileContents> contents, const ReaderOptions& options,
                uint64_t fileLength, uint64_t postscriptLength);
 
+    void readMetadata() const;
+    
     const ReaderOptions& getReaderOptions() const;
 
     CompressionKind getCompression() const override;

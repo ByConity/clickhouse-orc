@@ -22,6 +22,7 @@
 #include "Adaptor.hh"
 
 #include <string.h>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 
@@ -36,7 +37,8 @@ namespace orc {
     virtual ~MemoryPoolImpl() override;
 
     char* malloc(uint64_t size) override;
-    void free(char* p) override;
+    void free(char* p) ;
+    void free(char*p , size_t s) override;
   };
 
   char* MemoryPoolImpl::malloc(uint64_t size) {
@@ -46,7 +48,9 @@ namespace orc {
   void MemoryPoolImpl::free(char* p) {
     std::free(p);
   }
-
+  void MemoryPoolImpl::free(char* p,[[maybe_unused]]size_t s) {
+    std::free(p);
+  }
   MemoryPoolImpl::~MemoryPoolImpl() {
     // PASS
   }
@@ -74,7 +78,7 @@ namespace orc {
       (buf + i - 1)->~T();
     }
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf),sizeof(T) * currentCapacity );
     }
   }
 
@@ -100,7 +104,7 @@ namespace orc {
         T* buf_old = buf;
         buf = reinterpret_cast<T*>(memoryPool.malloc(sizeof(T) * newCapacity));
         memcpy(buf, buf_old, sizeof(T) * currentSize);
-        memoryPool.free(reinterpret_cast<char*>(buf_old));
+        memoryPool.free(reinterpret_cast<char*>(buf_old), sizeof(T) * currentCapacity);
       } else {
         buf = reinterpret_cast<T*>(memoryPool.malloc(sizeof(T) * newCapacity));
       }
@@ -113,7 +117,7 @@ namespace orc {
   template <>
   DataBuffer<char>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf), sizeof(char) * currentCapacity);
     }
   }
 
@@ -131,7 +135,7 @@ namespace orc {
   template <>
   DataBuffer<char*>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf), sizeof(char*) * currentCapacity);
     }
   }
 
@@ -149,7 +153,7 @@ namespace orc {
   template <>
   DataBuffer<double>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf), sizeof(double) * currentSize);
     }
   }
 
@@ -167,7 +171,7 @@ namespace orc {
   template <>
   DataBuffer<float>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf), sizeof(float) * currentCapacity);
     }
   }
 
@@ -185,7 +189,7 @@ namespace orc {
   template <>
   DataBuffer<int64_t>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf),sizeof(int64_t) * currentCapacity);
     }
   }
 
@@ -203,7 +207,7 @@ namespace orc {
   template <>
   DataBuffer<int32_t>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf),sizeof(int32_t) * currentCapacity);
     }
   }
 
@@ -221,7 +225,7 @@ namespace orc {
   template <>
   DataBuffer<int16_t>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf), sizeof(int16_t) * currentCapacity);
     }
   }
 
@@ -239,7 +243,7 @@ namespace orc {
   template <>
   DataBuffer<int8_t>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf), sizeof(int8_t) * currentCapacity);
     }
   }
 
@@ -257,7 +261,7 @@ namespace orc {
   template <>
   DataBuffer<uint64_t>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf),sizeof(uint64_t) * currentCapacity);
     }
   }
 
@@ -275,7 +279,7 @@ namespace orc {
   template <>
   DataBuffer<unsigned char>::~DataBuffer() {
     if (buf) {
-      memoryPool.free(reinterpret_cast<char*>(buf));
+      memoryPool.free(reinterpret_cast<char*>(buf),sizeof(unsigned char) * currentCapacity);
     }
   }
 

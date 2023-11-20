@@ -31,7 +31,8 @@ namespace orc {
     virtual ~MemoryPool();
 
     virtual char* malloc(uint64_t size) = 0;
-    virtual void free(char* p) = 0;
+    // virtual void free(char* p) = 0;
+    virtual void free(char*p , size_t s) = 0;
   };
   MemoryPool* getDefaultPool();
 

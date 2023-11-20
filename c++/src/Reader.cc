@@ -528,9 +528,11 @@ namespace orc {
                                                   stripeFooterLength, *contents.pool),
         contents.blockSize, *contents.pool, contents.readerMetrics);
     proto::StripeFooter result;
+    
     if (!result.ParseFromZeroCopyStream(pbStream.get())) {
       throw ParseError(std::string("bad StripeFooter from ") + pbStream->getName());
     }
+    
     // Verify StripeFooter in case it's corrupt
     if (result.columns_size() != contents.footer->types_size()) {
       std::stringstream msg;
