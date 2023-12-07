@@ -1,19 +1,16 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
+# Copyright 2021-present StarRocks, Inc. All rights reserved.
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 include_directories(
   ${PROJECT_SOURCE_DIR}/c++/src
@@ -21,18 +18,12 @@ include_directories(
   ${PROJECT_BINARY_DIR}/c++/src
 )
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX17_FLAGS} ${WARN_FLAGS}")
-
-if(BUILD_ENABLE_AVX512)
-  set(SIMD_TEST_SRCS TestRleVectorDecoder.cc)
-endif(BUILD_ENABLE_AVX512)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_FLAGS} ${WARN_FLAGS}")
 
 add_executable (orc-test
   MemoryInputStream.cc
   MemoryOutputStream.cc
-  MockStripeStreams.cc
   TestAttributes.cc
-  TestBlockBuffer.cc
   TestBufferedOutputStream.cc
   TestBloomFilter.cc
   TestByteRle.cc
@@ -41,7 +32,6 @@ add_executable (orc-test
   TestColumnReader.cc
   TestColumnStatistics.cc
   TestCompression.cc
-  TestConvertColumnReader.cc
   TestDecompression.cc
   TestDecimal.cc
   TestDictionaryEncoding.cc
@@ -56,13 +46,12 @@ add_executable (orc-test
   TestRLEV2Util.cc
   TestSargsApplier.cc
   TestSearchArgument.cc
-  TestSchemaEvolution.cc
   TestStripeIndexStatistics.cc
   TestTimestampStatistics.cc
+  TestTimestampTZ.cc
   TestTimezone.cc
   TestType.cc
   TestWriter.cc
-  ${SIMD_TEST_SRCS}
 )
 
 target_link_libraries (orc-test
@@ -71,7 +60,6 @@ target_link_libraries (orc-test
   orc::protobuf
   orc::snappy
   orc::zlib
-  orc::gtest
   orc::gmock
 )
 

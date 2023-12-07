@@ -16,57 +16,45 @@
  * limitations under the License.
  */
 
-#ifndef ORC_EXCEPTIONS_HH
-#define ORC_EXCEPTIONS_HH
-
-#include "orc/orc-config.hh"
+#pragma once
 
 #include <stdexcept>
 #include <string>
 
+#include "orc/orc-config.hh"
+
 namespace orc {
 
-  class NotImplementedYet : public std::logic_error {
-   public:
+class NotImplementedYet : public std::logic_error {
+public:
     explicit NotImplementedYet(const std::string& what_arg);
     explicit NotImplementedYet(const char* what_arg);
-    ~NotImplementedYet() noexcept override;
+    ~NotImplementedYet() ORC_NOEXCEPT override;
     NotImplementedYet(const NotImplementedYet&);
 
-   private:
-    NotImplementedYet& operator=(const NotImplementedYet&);
-  };
+private:
+    NotImplementedYet& operator=(const NotImplementedYet&) = delete;
+};
 
-  class ParseError : public std::runtime_error {
-   public:
+class ParseError : public std::runtime_error {
+public:
     explicit ParseError(const std::string& what_arg);
     explicit ParseError(const char* what_arg);
-    ~ParseError() noexcept override;
+    ~ParseError() ORC_NOEXCEPT override;
     ParseError(const ParseError&);
 
-   private:
-    ParseError& operator=(const ParseError&);
-  };
+private:
+    ParseError& operator=(const ParseError&) = delete;
+};
 
-  class InvalidArgument : public std::runtime_error {
-   public:
+class InvalidArgument : public std::runtime_error {
+public:
     explicit InvalidArgument(const std::string& what_arg);
     explicit InvalidArgument(const char* what_arg);
-    ~InvalidArgument() noexcept override;
+    ~InvalidArgument() ORC_NOEXCEPT override;
     InvalidArgument(const InvalidArgument&);
 
-   private:
-    InvalidArgument& operator=(const InvalidArgument&);
-  };
-
-  class SchemaEvolutionError : public std::logic_error {
-   public:
-    explicit SchemaEvolutionError(const std::string& what_arg);
-    explicit SchemaEvolutionError(const char* what_arg);
-    virtual ~SchemaEvolutionError() noexcept override;
-    SchemaEvolutionError(const SchemaEvolutionError&);
-    SchemaEvolutionError& operator=(const SchemaEvolutionError&) = delete;
-  };
-}  // namespace orc
-
-#endif
+private:
+    InvalidArgument& operator=(const InvalidArgument&) = delete;
+};
+} // namespace orc

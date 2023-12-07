@@ -16,16 +16,14 @@
  * limitations under the License.
  */
 
-#ifndef ORC_LZO_HH
-#define ORC_LZO_HH
-
-#include "orc/OrcFile.hh"
+#pragma once
 
 #include "Adaptor.hh"
+#include "orc/OrcFile.hh"
 
 namespace orc {
 
-  /**
+/**
    * Decompress the bytes in to the output buffer.
    * @param inputAddress the start of the input
    * @param inputLimit one past the last byte of the input
@@ -33,8 +31,5 @@ namespace orc {
    * @param outputLimit one past the last byte of the output buffer
    * @result the number of bytes decompressed
    */
-  uint64_t lzoDecompress(const char* inputAddress, const char* inputLimit, char* outputAddress,
-                         char* outputLimit);
-}  // namespace orc
-
-#endif
+uint64_t lzoDecompress(const char* inputAddress, const char* inputLimit, char* outputAddress, char* outputLimit);
+} // namespace orc

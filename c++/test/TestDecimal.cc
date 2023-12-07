@@ -16,16 +16,15 @@
  * limitations under the License.
  */
 
-#include "orc/Common.hh"
+#include <iostream>
 
 #include "OrcTest.hh"
+#include "orc/Common.hh"
 #include "wrap/gtest-wrapper.h"
-
-#include <iostream>
 
 namespace orc {
 
-  TEST(Decimal, testDecimalComparison) {
+TEST(Decimal, testDecimalComparison) {
     // same scales
     EXPECT_TRUE(compare(Decimal(Int128(99), 0), Decimal(Int128(100), 0)));
     EXPECT_TRUE(compare(Decimal(Int128(34543), 5), Decimal(Int128(4324324), 5)));
@@ -66,8 +65,7 @@ namespace orc {
     // negative numbers
     EXPECT_TRUE(compare(Decimal(Int128(-99), 0), Decimal(Int128(100), 0)));
     EXPECT_TRUE(compare(Decimal(Int128(-4324324), 5), Decimal(Int128(-34543), 5)));
-    EXPECT_TRUE(
-        compare(Decimal(Int128(-345344425435432l), 15), Decimal(Int128(-345345435432l), 15)));
+    EXPECT_TRUE(compare(Decimal(Int128(-345344425435432l), 15), Decimal(Int128(-345345435432l), 15)));
     EXPECT_TRUE(compare(Decimal(Int128(-50), 20), Decimal(Int128(-5), 20)));
     EXPECT_TRUE(compare(Decimal(Int128(-10000), 3), Decimal(Int128(-10000), 4)));
     EXPECT_TRUE(compare(Decimal(Int128(-1111), 3), Decimal(Int128(-111), 2)));
@@ -90,9 +88,9 @@ namespace orc {
                          Decimal(Int128("-123456789999999999999999999999999999900"), 30)));
     EXPECT_TRUE(compare(Decimal(Int128("-99999999999999999999999999999999999999"), 38),
                         Decimal(Int128::minimumValue(), 39)));
-  }
+}
 
-  TEST(Decimal, testString2Decimal) {
+TEST(Decimal, testString2Decimal) {
     // no decimal point
     Decimal decimal1("12345");
     EXPECT_EQ(Int128(12345), decimal1.value);
@@ -134,6 +132,6 @@ namespace orc {
     Decimal decimal10("-123.45");
     EXPECT_EQ(Int128(-12345), decimal10.value);
     EXPECT_EQ(2, decimal10.scale);
-  }
+}
 
-}  // namespace orc
+} // namespace orc

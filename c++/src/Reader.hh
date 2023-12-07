@@ -1,3 +1,20 @@
+// Copyright 2021-present StarRocks, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file is based on code available under the Apache license here:
+//   https://github.com/apache/orc/tree/main/c++/src/Reader.hh
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,47 +33,42 @@
  * limitations under the License.
  */
 
-#ifndef ORC_READER_IMPL_HH
-#define ORC_READER_IMPL_HH
+#pragma once
 
+#include "ColumnReader.hh"
+#include "RLE.hh"
+#include "TypeImpl.hh"
 #include "orc/Exceptions.hh"
 #include "orc/Int128.hh"
 #include "orc/OrcFile.hh"
 #include "orc/Reader.hh"
-
-#include "ColumnReader.hh"
-#include "RLE.hh"
-#include "SchemaEvolution.hh"
-#include "TypeImpl.hh"
 #include "sargs/SargsApplier.hh"
 
 namespace orc {
 
-  static const uint64_t DIRECTORY_SIZE_GUESS = 16 * 1024;
+static const uint64_t DIRECTORY_SIZE_GUESS = 16 * 1024;
 
-  /**
-   * WriterVersion Implementation
-   */
-  class WriterVersionImpl {
-   private:
+/**
+  * WriterVersion Implementation
+  */
+class WriterVersionImpl {
+private:
     WriterVersion version;
 
-   public:
+public:
     // Known Versions with issues resolved
     // The static method below is to fix global constructors Clang warning
     static const WriterVersionImpl& VERSION_HIVE_8732();
 
     WriterVersionImpl(WriterVersion ver) : version(ver) {}
 
-    bool compareGT(const WriterVersion other) const {
-      return version > other;
-    }
-  };
+    bool compareGT(const WriterVersion other) const { return version > other; }
+};
 
-  /**
-   * State shared between Reader and Row Reader
-   */
-  struct FileContents {
+/**
+  * State shared between Reader and Row Reader
+  */
+struct FileContents {
     std::unique_ptr<InputStream> stream;
     std::unique_ptr<proto::PostScript> postscript;
     std::unique_ptr<proto::Footer> footer;
@@ -70,16 +82,15 @@ namespace orc {
     bool isDecimalAsLong;
     std::unique_ptr<proto::Metadata> metadata;
     ReaderMetrics* readerMetrics;
-  };
+};
 
-  proto::StripeFooter getStripeFooter(const proto::StripeInformation& info,
-                                      const FileContents& contents);
+proto::StripeFooter getStripeFooter(const proto::StripeInformation& info, const FileContents& contents);
 
-  class ReaderImpl;
-  class Timezone;
+class ReaderImpl;
+class Timezone;
 
-  class ColumnSelector {
-   private:
+class ColumnSelector {
+private:
     std::map<std::string, uint64_t> nameIdMap;
     std::map<uint64_t, const Type*> idTypeMap;
     const FileContents* contents;
@@ -89,44 +100,33 @@ namespace orc {
     void buildTypeNameIdMap(const Type* type);
     std::string toDotColumnPath();
 
-   public:
+public:
     // Select a field by name
     void updateSelectedByName(std::vector<bool>& selectedColumns, const std::string& name);
     // Select a field by id
     void updateSelectedByFieldId(std::vector<bool>& selectedColumns, uint64_t fieldId);
     // Select a type by id
     void updateSelectedByTypeId(std::vector<bool>& selectedColumns, uint64_t typeId);
-    // Select a type by id and read intent map.
-    void updateSelectedByTypeId(std::vector<bool>& selectedColumns, uint64_t typeId,
-                                const RowReaderOptions::IdReadIntentMap& idReadIntentMap);
 
     // Select all of the recursive children of the given type.
     void selectChildren(std::vector<bool>& selectedColumns, const Type& type);
-    // Select a type id of the given type.
-    // This function may also select all of the recursive children of the given type
-    // depending on the read intent of that type in idReadIntentMap.
-    void selectChildren(std::vector<bool>& selectedColumns, const Type& type,
-                        const RowReaderOptions::IdReadIntentMap& idReadIntentMap);
 
     // For each child of type, select it if one of its children
     // is selected.
     bool selectParents(std::vector<bool>& selectedColumns, const Type& type);
-
     /**
-     * Constructor that selects columns.
-     * @param contents of the file
-     */
+    * Constructor that selects columns.
+    * @param contents of the file
+    */
     ColumnSelector(const FileContents* contents);
 
     // Select the columns from the RowReaderoptions object
-    void updateSelected(std::vector<bool>& selectedColumns, const RowReaderOptions& options);
+    void updateSelected(std::vector<bool>& selectedColumns, std::vector<bool>& lazyLoadColumns,
+                        const RowReaderOptions& options);
+};
 
-    // Select the columns from the Readeroptions object
-    void updateSelected(std::vector<bool>& selectedColumns, const ReaderOptions& options);
-  };
-
-  class RowReaderImpl : public RowReader {
-   private:
+class RowReaderImpl : public RowReader {
+private:
     const Timezone& localTimezone;
 
     // contents
@@ -136,6 +136,7 @@ namespace orc {
 
     // inputs
     std::vector<bool> selectedColumns;
+    std::vector<bool> lazyLoadColumns;
 
     // footer
     proto::Footer* footer;
@@ -147,9 +148,10 @@ namespace orc {
     uint64_t previousRow;
     uint64_t firstStripe;
     uint64_t currentStripe;
-    uint64_t lastStripe;  // the stripe AFTER the last one
-    uint64_t processingStripe;
+    uint64_t lastStripe; // the stripe AFTER the last one
     uint64_t currentRowInStripe;
+    uint64_t lazyLoadLastUsedRowInStripe; // which row in stripe loazy load files are used in last time.
+
     uint64_t rowsInCurrentStripe;
     // number of row groups between first stripe and last stripe
     uint64_t numRowGroupsInStripeRange;
@@ -158,8 +160,6 @@ namespace orc {
     std::unique_ptr<ColumnReader> reader;
 
     bool enableEncodedBlock;
-    bool useTightNumericVector;
-    bool throwOnSchemaEvolutionOverflow;
     // internal methods
     void startNextStripe();
     inline void markEndOfFile();
@@ -172,9 +172,15 @@ namespace orc {
 
     // desired timezone to return data of timestamp types.
     const Timezone& readerTimezone;
+    bool useWriterTimezone;
 
-    // match read and file types
-    SchemaEvolution schemaEvolution;
+    // this shared buffer will be used in reading lifetime.
+    // it's introduced because we want to gather input bytes into a consecutive memory area
+    // and apply RLEv2 or double decoding algorithm on this consecutive memory area efficiently
+    // otherwise we have to read byte by byte which is impossible to apply efficient algorithm.
+    // it's can be used only in a scope of function, and can be used by many column readers.
+
+    mutable DataBuffer<char> sharedBuffer;
 
     // load stripe index if not done so
     void loadStripeIndex();
@@ -182,28 +188,22 @@ namespace orc {
     // In case of PPD, batch size should be aware of row group boundaries.
     // If only a subset of row groups are selected then the next read should
     // stop at the end of selected range.
-    static uint64_t computeBatchSize(uint64_t requestedSize, uint64_t currentRowInStripe,
-                                     uint64_t rowsInCurrentStripe, uint64_t rowIndexStride,
-                                     const std::vector<uint64_t>& nextSkippedRows);
+    static uint64_t computeBatchSize(uint64_t requestedSize, uint64_t currentRowInStripe, uint64_t rowsInCurrentStripe,
+                                     uint64_t rowIndexStride, const std::vector<uint64_t>& nextSkippedRows);
 
     // Skip non-selected rows
     static uint64_t advanceToNextRowGroup(uint64_t currentRowInStripe, uint64_t rowsInCurrentStripe,
-                                          uint64_t rowIndexStride,
-                                          const std::vector<uint64_t>& nextSkippedRows);
+                                          uint64_t rowIndexStride, const std::vector<uint64_t>& nextSkippedRows);
 
     friend class TestRowReader_advanceToNextRowGroup_Test;
     friend class TestRowReader_computeBatchSize_Test;
-
-    // whether the current stripe is initialized
-    inline bool isCurrentStripeInited() const {
-      return currentStripe == processingStripe;
-    }
 
     /**
      * Seek to the start of a row group in the current stripe
      * @param rowGroupEntryId the row group id to seek to
      */
     void seekToRowGroup(uint32_t rowGroupEntryId);
+    void getRowGroupPosition(uint32_t rowGroupEntryId, PositionProviderMap* map);
 
     /**
      * Check if the file has bad bloom filters. We will skip using them in the
@@ -212,22 +212,27 @@ namespace orc {
      */
     bool hasBadBloomFilters();
 
-   public:
+    void buildIORanges(std::vector<InputStream::IORange>* io_ranges);
+
+public:
     /**
-     * Constructor that lets the user specify additional options.
-     * @param contents of the file
-     * @param options options for reading
-     */
-    RowReaderImpl(std::shared_ptr<FileContents> contents, const RowReaderOptions& options);
+    * Constructor that lets the user specify additional options.
+    * @param contents of the file
+    * @param options options for reading
+    */
+    RowReaderImpl(const std::shared_ptr<FileContents>& contents, const RowReaderOptions& options);
 
     // Select the columns from the options object
-    const std::vector<bool> getSelectedColumns() const override;
+    const std::vector<bool>& getSelectedColumns() const override;
+    const std::vector<bool>& getLazyLoadColumns() const override;
 
     const Type& getSelectedType() const override;
 
     std::unique_ptr<ColumnVectorBatch> createRowBatch(uint64_t size) const override;
 
-    bool next(ColumnVectorBatch& data) override;
+    bool next(ColumnVectorBatch& data, ReadPosition* pos) override;
+    void lazyLoadSeekTo(uint64_t rowInStripe) override;
+    void lazyLoadNext(ColumnVectorBatch& data, uint64_t numValues) override;
 
     CompressionKind getCompression() const;
 
@@ -241,14 +246,12 @@ namespace orc {
     bool getThrowOnHive11DecimalOverflow() const;
     bool getIsDecimalAsLong() const;
     int32_t getForcedScaleOnHive11Decimal() const;
+    bool getUseWriterTimezone() const;
+    DataBuffer<char>* getSharedBuffer() const;
+};
 
-    const SchemaEvolution* getSchemaEvolution() const {
-      return &schemaEvolution;
-    }
-  };
-
-  class ReaderImpl : public Reader {
-   private:
+class ReaderImpl : public Reader {
+private:
     // FileContents
     std::shared_ptr<FileContents> contents;
 
@@ -263,16 +266,16 @@ namespace orc {
     uint64_t getMemoryUse(int stripeIx, std::vector<bool>& selectedColumns);
 
     // internal methods
+    void readMetadata() const;
     void checkOrcVersion();
-    void getRowIndexStatistics(
-        const proto::StripeInformation& stripeInfo, uint64_t stripeIndex,
-        const proto::StripeFooter& currentStripeFooter,
-        std::vector<std::vector<proto::ColumnStatistics> >* indexStats) const;
+    void getRowIndexStatistics(const proto::StripeInformation& stripeInfo, uint64_t stripeIndex,
+                               const proto::StripeFooter& currentStripeFooter,
+                               std::vector<std::vector<proto::ColumnStatistics> >* indexStats) const;
 
     // metadata
     mutable bool isMetadataLoaded;
 
-   public:
+public:
     /**
      * Constructor that lets the user specify additional options.
      * @param contents of the file
@@ -280,11 +283,9 @@ namespace orc {
      * @param fileLength the length of the file in bytes
      * @param postscriptLength the length of the postscript in bytes
      */
-    ReaderImpl(std::shared_ptr<FileContents> contents, const ReaderOptions& options,
-               uint64_t fileLength, uint64_t postscriptLength);
+    ReaderImpl(std::shared_ptr<FileContents> contents, const ReaderOptions& options, uint64_t fileLength,
+               uint64_t postscriptLength);
 
-    void readMetadata() const;
-    
     const ReaderOptions& getReaderOptions() const;
 
     CompressionKind getCompression() const override;
@@ -314,6 +315,7 @@ namespace orc {
     uint64_t getNumberOfStripes() const override;
 
     std::unique_ptr<StripeInformation> getStripe(uint64_t) const override;
+    const orc::proto::StripeInformation& getStripeInOrcFormat(uint64_t stripeIndex) const override;
 
     uint64_t getNumberOfStripeStatistics() const override;
 
@@ -341,29 +343,17 @@ namespace orc {
 
     bool hasCorrectStatistics() const override;
 
-    const ReaderMetrics* getReaderMetrics() const override {
-      return contents->readerMetrics;
-    }
+    const ReaderMetrics* getReaderMetrics() const override { return contents->readerMetrics; }
 
-    const proto::PostScript* getPostscript() const {
-      return contents->postscript.get();
-    }
+    const proto::PostScript* getPostscript() const { return contents->postscript.get(); }
 
-    uint64_t getBlockSize() const {
-      return contents->blockSize;
-    }
+    uint64_t getBlockSize() const { return contents->blockSize; }
 
-    const proto::Footer* getFooter() const {
-      return contents->footer.get();
-    }
+    const proto::Footer* getFooter() const { return contents->footer.get(); }
 
-    const Type* getSchema() const {
-      return contents->schema.get();
-    }
+    const Type* getSchema() const { return contents->schema.get(); }
 
-    InputStream* getStream() const {
-      return contents->stream.get();
-    }
+    InputStream* getStream() const { return contents->stream.get(); }
 
     uint64_t getMemoryUse(int stripeIx = -1) override;
 
@@ -373,9 +363,8 @@ namespace orc {
 
     uint64_t getMemoryUseByTypeId(const std::list<uint64_t>& include, int stripeIx = -1) override;
 
-    std::map<uint32_t, BloomFilterIndex> getBloomFilters(
-        uint32_t stripeIndex, const std::set<uint32_t>& included) const override;
-  };
-}  // namespace orc
+    std::map<uint32_t, BloomFilterIndex> getBloomFilters(uint32_t stripeIndex,
+                                                         const std::set<uint32_t>& included) const override;
+};
 
-#endif
+} // namespace orc

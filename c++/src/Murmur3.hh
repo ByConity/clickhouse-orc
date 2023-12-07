@@ -16,25 +16,22 @@
  * limitations under the License.
  */
 
-#ifndef ORC_MURMUR3_HH
-#define ORC_MURMUR3_HH
+#pragma once
 
 #include "orc/orc-config.hh"
 
 namespace orc {
 
-  class Murmur3 {
-   public:
+class Murmur3 {
+public:
     static const uint32_t DEFAULT_SEED = 104729;
     static const uint64_t NULL_HASHCODE = 2862933555777941757LL;
 
     static uint64_t hash64(const uint8_t* data, uint32_t len);
 
-   private:
+private:
     static uint64_t fmix64(uint64_t value);
     static uint64_t hash64(const uint8_t* data, uint32_t len, uint32_t seed);
-  };
+};
 
-}  // namespace orc
-
-#endif  // ORC_MURMUR3_HH
+} // namespace orc

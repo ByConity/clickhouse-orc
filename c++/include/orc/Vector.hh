@@ -1,3 +1,20 @@
+// Copyright 2021-present StarRocks, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file is based on code available under the Apache license here:
+//   https://github.com/apache/orc/tree/main/c++/include/orc/Vector.hh
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,34 +33,29 @@
  * limitations under the License.
  */
 
-#ifndef ORC_VECTOR_HH
-#define ORC_VECTOR_HH
+#pragma once
+
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <list>
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+#include <vector>
 
 #include "Int128.hh"
 #include "MemoryPool.hh"
 #include "orc/orc-config.hh"
 
-#include <cstdlib>
-#include <cstring>
-#include <list>
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <vector>
-
 namespace orc {
 
-  /**
+/**
    * The base class for each of the column vectors. This class handles
    * the generic attributes such as number of elements, capacity, and
    * notNull vector.
-   * Note: If hasNull is false, the values in the notNull buffer are not required.
-   * On the writer side, it does not read values from notNull buffer so users are
-   * not expected to write notNull buffer if hasNull is false. On the reader side,
-   * it does not set notNull buffer if hasNull is false, meaning that it is undefined
-   * behavior to consume values from notNull buffer in this case by downstream users.
    */
-  struct ColumnVectorBatch {
+struct ColumnVectorBatch {
     ColumnVectorBatch(uint64_t capacity, MemoryPool& pool);
     virtual ~ColumnVectorBatch();
 
@@ -64,7 +76,7 @@ namespace orc {
     /**
      * Generate a description of this vector as a string.
      */
-    virtual std::string toString() const = 0;
+    virtual std::string toString() const { return "";};
 
     /**
      * Change the number of slots to at least the given capacity.
@@ -88,122 +100,44 @@ namespace orc {
      */
     virtual bool hasVariableLength();
 
-   private:
-    ColumnVectorBatch(const ColumnVectorBatch&);
-    ColumnVectorBatch& operator=(const ColumnVectorBatch&);
-  };
+    // filter column vector batch
+    // f_data: filter data
+    // f_size: filter size
+    // true_size: number of ones in filter data.
+    virtual void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size);
+    virtual void filterOnFields(uint8_t* f_data, uint32_t f_size, uint32_t true_size, const std::vector<int>& fields,
+                                bool onLazyLoad);
 
-  template <typename ValueType>
-  struct IntegerVectorBatch : public ColumnVectorBatch {
-    IntegerVectorBatch(uint64_t cap, MemoryPool& pool)
-        : ColumnVectorBatch(cap, pool), data(pool, cap) {
-      // PASS
-    }
+private:
+    ColumnVectorBatch(const ColumnVectorBatch&) = delete;
+    ColumnVectorBatch& operator=(const ColumnVectorBatch&) = delete;
+};
 
-    ~IntegerVectorBatch() override = default;
+struct LongVectorBatch : public ColumnVectorBatch {
+    LongVectorBatch(uint64_t capacity, MemoryPool& pool);
+    ~LongVectorBatch() override;
 
-    inline std::string toString() const override;
+    DataBuffer<int64_t> data;
+    std::string toString() const override;
+    void resize(uint64_t capacity) override;
+    void clear() override;
+    uint64_t getMemoryUsage() override;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-    void resize(uint64_t cap) override {
-      if (capacity < cap) {
-        ColumnVectorBatch::resize(cap);
-        data.resize(cap);
-      }
-    }
+struct DoubleVectorBatch : public ColumnVectorBatch {
+    DoubleVectorBatch(uint64_t capacity, MemoryPool& pool);
+    ~DoubleVectorBatch() override;
+    std::string toString() const override;
+    void resize(uint64_t capacity) override;
+    void clear() override;
+    uint64_t getMemoryUsage() override;
 
-    void clear() override {
-      numElements = 0;
-    }
+    DataBuffer<double> data;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-    uint64_t getMemoryUsage() override {
-      return ColumnVectorBatch::getMemoryUsage() +
-             static_cast<uint64_t>(data.capacity() * sizeof(ValueType));
-    }
-
-    DataBuffer<ValueType> data;
-  };
-
-  using LongVectorBatch = IntegerVectorBatch<int64_t>;
-  using IntVectorBatch = IntegerVectorBatch<int32_t>;
-  using ShortVectorBatch = IntegerVectorBatch<int16_t>;
-  using ByteVectorBatch = IntegerVectorBatch<int8_t>;
-
-  template <>
-  inline std::string LongVectorBatch::toString() const {
-    std::ostringstream buffer;
-    buffer << "Long vector <" << numElements << " of " << capacity << ">";
-    return buffer.str();
-  }
-
-  template <>
-  inline std::string IntVectorBatch::toString() const {
-    std::ostringstream buffer;
-    buffer << "Int vector <" << numElements << " of " << capacity << ">";
-    return buffer.str();
-  }
-
-  template <>
-  inline std::string ShortVectorBatch::toString() const {
-    std::ostringstream buffer;
-    buffer << "Short vector <" << numElements << " of " << capacity << ">";
-    return buffer.str();
-  }
-
-  template <>
-  inline std::string ByteVectorBatch::toString() const {
-    std::ostringstream buffer;
-    buffer << "Byte vector <" << numElements << " of " << capacity << ">";
-    return buffer.str();
-  }
-
-  template <typename FloatType>
-  struct FloatingVectorBatch : public ColumnVectorBatch {
-    FloatingVectorBatch(uint64_t cap, MemoryPool& pool)
-        : ColumnVectorBatch(cap, pool), data(pool, cap) {
-      // PASS
-    }
-
-    ~FloatingVectorBatch() override = default;
-
-    inline std::string toString() const override;
-
-    void resize(uint64_t cap) override {
-      if (capacity < cap) {
-        ColumnVectorBatch::resize(cap);
-        data.resize(cap);
-      }
-    }
-
-    void clear() override {
-      numElements = 0;
-    }
-
-    uint64_t getMemoryUsage() override {
-      return ColumnVectorBatch::getMemoryUsage() +
-             static_cast<uint64_t>(data.capacity() * sizeof(FloatType));
-    }
-
-    DataBuffer<FloatType> data;
-  };
-
-  using DoubleVectorBatch = FloatingVectorBatch<double>;
-  using FloatVectorBatch = FloatingVectorBatch<float>;
-
-  template <>
-  inline std::string DoubleVectorBatch::toString() const {
-    std::ostringstream buffer;
-    buffer << "Double vector <" << numElements << " of " << capacity << ">";
-    return buffer.str();
-  }
-
-  template <>
-  inline std::string FloatVectorBatch::toString() const {
-    std::ostringstream buffer;
-    buffer << "Float vector <" << numElements << " of " << capacity << ">";
-    return buffer.str();
-  }
-
-  struct StringVectorBatch : public ColumnVectorBatch {
+struct StringVectorBatch : public ColumnVectorBatch {
     StringVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~StringVectorBatch() override;
     std::string toString() const override;
@@ -217,9 +151,13 @@ namespace orc {
     DataBuffer<int64_t> length;
     // string blob
     DataBuffer<char> blob;
-  };
+    // dict codes, iff. there is dictionary.
+    DataBuffer<int64_t> codes;
+    bool use_codes;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-  struct StringDictionary {
+struct StringDictionary {
     StringDictionary(MemoryPool& pool);
     DataBuffer<char> dictionaryBlob;
 
@@ -227,23 +165,23 @@ namespace orc {
     DataBuffer<int64_t> dictionaryOffset;
 
     void getValueByIndex(int64_t index, char*& valPtr, int64_t& length) {
-      if (index < 0 || static_cast<uint64_t>(index) + 1 >= dictionaryOffset.size()) {
-        throw std::out_of_range("index out of range.");
-      }
+        if (index < 0 || static_cast<uint64_t>(index) + 1 >= dictionaryOffset.size()) {
+            throw std::out_of_range("index out of range.");
+        }
 
-      int64_t* offsetPtr = dictionaryOffset.data();
+        int64_t* offsetPtr = dictionaryOffset.data();
 
-      valPtr = dictionaryBlob.data() + offsetPtr[index];
-      length = offsetPtr[index + 1] - offsetPtr[index];
+        valPtr = dictionaryBlob.data() + offsetPtr[index];
+        length = offsetPtr[index + 1] - offsetPtr[index];
     }
-  };
+};
 
-  /**
+/**
    * Include a index array with reference to corresponding dictionary.
    * User first obtain index from index array and retrieve string pointer
    * and length by calling getValueByIndex() from dictionary.
    */
-  struct EncodedStringVectorBatch : public StringVectorBatch {
+struct EncodedStringVectorBatch : public StringVectorBatch {
     EncodedStringVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~EncodedStringVectorBatch() override;
     std::string toString() const override;
@@ -252,9 +190,10 @@ namespace orc {
 
     // index for dictionary entry
     DataBuffer<int64_t> index;
-  };
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-  struct StructVectorBatch : public ColumnVectorBatch {
+struct StructVectorBatch : public ColumnVectorBatch {
     StructVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~StructVectorBatch() override;
     std::string toString() const override;
@@ -264,9 +203,17 @@ namespace orc {
     bool hasVariableLength() override;
 
     std::vector<ColumnVectorBatch*> fields;
-  };
+    std::unordered_map<uint64_t, ColumnVectorBatch*> fieldsColumnIdMap;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+    void filterOnFields(uint8_t* f_data, uint32_t f_size, uint32_t true_size, const std::vector<int>& fields,
+                        bool onLazyLoad) override;
 
-  struct ListVectorBatch : public ColumnVectorBatch {
+private:
+    // Mark that this StructVectorBatch is already called ColumnVectorBatch::filter(f_data, f_size, true_size);
+    bool alreadyFiltered = false;
+};
+
+struct ListVectorBatch : public ColumnVectorBatch {
     ListVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~ListVectorBatch() override;
     std::string toString() const override;
@@ -282,10 +229,11 @@ namespace orc {
     DataBuffer<int64_t> offsets;
 
     // the concatenated elements
-    std::unique_ptr<ColumnVectorBatch> elements;
-  };
+    ORC_UNIQUE_PTR<ColumnVectorBatch> elements;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-  struct MapVectorBatch : public ColumnVectorBatch {
+struct MapVectorBatch : public ColumnVectorBatch {
     MapVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~MapVectorBatch() override;
     std::string toString() const override;
@@ -301,12 +249,13 @@ namespace orc {
     DataBuffer<int64_t> offsets;
 
     // the concatenated keys
-    std::unique_ptr<ColumnVectorBatch> keys;
+    ORC_UNIQUE_PTR<ColumnVectorBatch> keys;
     // the concatenated elements
-    std::unique_ptr<ColumnVectorBatch> elements;
-  };
+    ORC_UNIQUE_PTR<ColumnVectorBatch> elements;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-  struct UnionVectorBatch : public ColumnVectorBatch {
+struct UnionVectorBatch : public ColumnVectorBatch {
     UnionVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~UnionVectorBatch() override;
     std::string toString() const override;
@@ -327,19 +276,20 @@ namespace orc {
 
     // the sub-columns
     std::vector<ColumnVectorBatch*> children;
-  };
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-  struct Decimal {
+struct Decimal {
     Decimal(const Int128& value, int32_t scale);
     explicit Decimal(const std::string& value);
     Decimal();
 
     std::string toString(bool trimTrailingZeros = false) const;
     Int128 value;
-    int32_t scale;
-  };
+    int32_t scale{0};
+};
 
-  struct Decimal64VectorBatch : public ColumnVectorBatch {
+struct Decimal64VectorBatch : public ColumnVectorBatch {
     Decimal64VectorBatch(uint64_t capacity, MemoryPool& pool);
     ~Decimal64VectorBatch() override;
     std::string toString() const override;
@@ -354,8 +304,9 @@ namespace orc {
 
     // the numeric values
     DataBuffer<int64_t> values;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
 
-   protected:
+protected:
     /**
      * Contains the scales that were read from the file. Should NOT be
      * used.
@@ -363,9 +314,9 @@ namespace orc {
     DataBuffer<int64_t> readScales;
     friend class Decimal64ColumnReader;
     friend class Decimal64ColumnWriter;
-  };
+};
 
-  struct Decimal128VectorBatch : public ColumnVectorBatch {
+struct Decimal128VectorBatch : public ColumnVectorBatch {
     Decimal128VectorBatch(uint64_t capacity, MemoryPool& pool);
     ~Decimal128VectorBatch() override;
     std::string toString() const override;
@@ -380,8 +331,9 @@ namespace orc {
 
     // the numeric values
     DataBuffer<Int128> values;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
 
-   protected:
+protected:
     /**
      * Contains the scales that were read from the file. Should NOT be
      * used.
@@ -390,14 +342,14 @@ namespace orc {
     friend class Decimal128ColumnReader;
     friend class DecimalHive11ColumnReader;
     friend class Decimal128ColumnWriter;
-  };
+};
 
-  /**
+/**
    * A column vector batch for storing timestamp values.
    * The timestamps are stored split into the time_t value (seconds since
    * 1 Jan 1970 00:00:00) and the nanoseconds within the time_t value.
    */
-  struct TimestampVectorBatch : public ColumnVectorBatch {
+struct TimestampVectorBatch : public ColumnVectorBatch {
     TimestampVectorBatch(uint64_t capacity, MemoryPool& pool);
     ~TimestampVectorBatch() override;
     std::string toString() const override;
@@ -413,8 +365,8 @@ namespace orc {
 
     // the nanoseconds of each value
     DataBuffer<int64_t> nanoseconds;
-  };
 
-}  // namespace orc
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
 
-#endif
+} // namespace orc

@@ -16,18 +16,17 @@
  * limitations under the License.
  */
 
-#include "orc/orc-config.hh"
+#include <iostream>
 
+#include "orc/orc-config.hh"
 #include "wrap/gtest-wrapper.h"
 #include "wrap/orc-proto-wrapper.hh"
 
-#include <iostream>
-
 GTEST_API_ int main(int argc, char** argv) {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-  std::cout << "ORC version: " << ORC_VERSION << "\n";
-  testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  google::protobuf::ShutdownProtobufLibrary();
-  return result;
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+    std::cout << "ORC version: " << ORC_VERSION << "\n";
+    testing::InitGoogleTest(&argc, argv);
+    int result = RUN_ALL_TESTS();
+    google::protobuf::ShutdownProtobufLibrary();
+    return result;
 }

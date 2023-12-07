@@ -16,48 +16,37 @@
  * limitations under the License.
  */
 
-#ifndef ORC_WRITER_HH
-#define ORC_WRITER_HH
+#pragma once
+
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "orc/Common.hh"
 #include "orc/Type.hh"
 #include "orc/Vector.hh"
 #include "orc/orc-config.hh"
 
-#include <atomic>
-#include <memory>
-#include <set>
-#include <string>
-#include <vector>
-
 namespace orc {
 
-  // classes that hold data members so we can maintain binary compatibility
-  struct WriterOptionsPrivate;
+// classes that hold data members so we can maintain binary compatibility
+struct WriterOptionsPrivate;
 
-  enum CompressionStrategy { CompressionStrategy_SPEED = 0, CompressionStrategy_COMPRESSION };
+enum CompressionStrategy { CompressionStrategy_SPEED = 0, CompressionStrategy_COMPRESSION };
 
-  enum RleVersion { RleVersion_1 = 0, RleVersion_2 = 1 };
+enum RleVersion { RleVersion_1 = 0, RleVersion_2 = 1 };
 
-  class Timezone;
+class Timezone;
 
-  /**
-   * Expose the IO metrics for write operation.
-   */
-  struct WriterMetrics {
-    // Record the number of IO requests written to the output file
-    std::atomic<uint64_t> IOCount{0};
-    // Record the lantency of IO blocking
-    std::atomic<uint64_t> IOBlockingLatencyUs{0};
-  };
-  /**
+/**
    * Options for creating a Writer.
    */
-  class WriterOptions {
-   private:
-    std::unique_ptr<WriterOptionsPrivate> privateBits;
+class WriterOptions {
+private:
+    ORC_UNIQUE_PTR<WriterOptionsPrivate> privateBits;
 
-   public:
+public:
     WriterOptions();
     WriterOptions(const WriterOptions&);
     WriterOptions(WriterOptions&);
@@ -87,8 +76,7 @@ namespace orc {
     uint64_t getCompressionBlockSize() const;
 
     /**
-     * Set row index stride (the number of rows per an entry in the row index). Use value 0 to
-     * disable row index.
+     * Set row index stride (the number of rows per an entry in the row index). Use value 0 to disable row index.
      */
     WriterOptions& setRowIndexStride(uint64_t stride);
 
@@ -240,45 +228,10 @@ namespace orc {
      * @param zone writer timezone name
      */
     WriterOptions& setTimezoneName(const std::string& zone);
+};
 
-    /**
-     * Set the writer metrics.
-     */
-    WriterOptions& setWriterMetrics(WriterMetrics* metrics);
-
-    /**
-     * Get the writer metrics.
-     * @return if not set, return nullptr.
-     */
-    WriterMetrics* getWriterMetrics() const;
-
-    /**
-     * Set use tight numeric vectorBatch or not.
-     */
-    WriterOptions& setUseTightNumericVector(bool useTightNumericVector);
-
-    /**
-     * Get whether or not to use dedicated columnVectorBatch
-     * @return if not set, the default is false
-     */
-    bool getUseTightNumericVector() const;
-
-    /**
-     * Set the initial capacity of output buffer in the class BufferedOutputStream.
-     * Each column contains one or more BufferOutputStream depending on its type,
-     * and these buffers will automatically expand when more memory is required.
-     */
-    WriterOptions& setOutputBufferCapacity(uint64_t capacity);
-
-    /**
-     * Get the initial capacity of output buffer in the class BufferedOutputStream.
-     * @return if not set, return default value which is 1 MB.
-     */
-    uint64_t getOutputBufferCapacity() const;
-  };
-
-  class Writer {
-   public:
+class Writer {
+public:
     virtual ~Writer();
 
     /**
@@ -286,7 +239,7 @@ namespace orc {
      * @param size the number of rows to write.
      * @return a new ColumnVectorBatch to write into.
      */
-    virtual std::unique_ptr<ColumnVectorBatch> createRowBatch(uint64_t size) const = 0;
+    virtual ORC_UNIQUE_PTR<ColumnVectorBatch> createRowBatch(uint64_t size) const = 0;
 
     /**
      * Add a row batch into current writer.
@@ -302,15 +255,6 @@ namespace orc {
     /**
      * Add user metadata to the writer.
      */
-    virtual void addUserMetadata(const std::string& name, const std::string& value) = 0;
-
-    /**
-     * Write an intermediate footer on the file such that if the file is
-     * truncated to the returned offset, it would be a valid ORC file.
-     * @return the offset that would be a valid end location for an ORC file
-     */
-    virtual uint64_t writeIntermediateFooter() = 0;
-  };
-}  // namespace orc
-
-#endif
+    virtual void addUserMetadata(const std::string name, const std::string value) = 0;
+};
+} // namespace orc

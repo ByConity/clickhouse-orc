@@ -16,22 +16,19 @@
  * limitations under the License.
  */
 
-#ifndef ORC_STATISTICS_HH
-#define ORC_STATISTICS_HH
+#pragma once
 
 #include "orc/Type.hh"
 #include "orc/Vector.hh"
 #include "orc/orc-config.hh"
 
-#include <sstream>
-
 namespace orc {
 
-  /**
+/**
    * Statistics that are available for all types of columns.
    */
-  class ColumnStatistics {
-   public:
+class ColumnStatistics {
+public:
     virtual ~ColumnStatistics();
 
     /**
@@ -51,13 +48,13 @@ namespace orc {
      * Print out statistics of column if any.
      */
     virtual std::string toString() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for binary columns.
    */
-  class BinaryColumnStatistics : public ColumnStatistics {
-   public:
+class BinaryColumnStatistics : public ColumnStatistics {
+public:
     ~BinaryColumnStatistics() override;
 
     /**
@@ -67,13 +64,13 @@ namespace orc {
     virtual bool hasTotalLength() const = 0;
 
     virtual uint64_t getTotalLength() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for boolean columns.
    */
-  class BooleanColumnStatistics : public ColumnStatistics {
-   public:
+class BooleanColumnStatistics : public ColumnStatistics {
+public:
     ~BooleanColumnStatistics() override;
 
     /**
@@ -84,13 +81,13 @@ namespace orc {
 
     virtual uint64_t getFalseCount() const = 0;
     virtual uint64_t getTrueCount() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for date columns.
    */
-  class DateColumnStatistics : public ColumnStatistics {
-   public:
+class DateColumnStatistics : public ColumnStatistics {
+public:
     ~DateColumnStatistics() override;
 
     /**
@@ -116,13 +113,13 @@ namespace orc {
      * @return maximum value
      */
     virtual int32_t getMaximum() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for decimal columns.
    */
-  class DecimalColumnStatistics : public ColumnStatistics {
-   public:
+class DecimalColumnStatistics : public ColumnStatistics {
+public:
     ~DecimalColumnStatistics() override;
 
     /**
@@ -160,13 +157,13 @@ namespace orc {
      * @return sum of all the values
      */
     virtual Decimal getSum() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for float and double columns.
    */
-  class DoubleColumnStatistics : public ColumnStatistics {
-   public:
+class DoubleColumnStatistics : public ColumnStatistics {
+public:
     ~DoubleColumnStatistics() override;
 
     /**
@@ -206,14 +203,14 @@ namespace orc {
      * @return the sum
      */
     virtual double getSum() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for all of the integer columns, such as byte, short, int, and
    * long.
    */
-  class IntegerColumnStatistics : public ColumnStatistics {
-   public:
+class IntegerColumnStatistics : public ColumnStatistics {
+public:
     ~IntegerColumnStatistics() override;
 
     /**
@@ -253,13 +250,13 @@ namespace orc {
      * @return the sum of the column
      */
     virtual int64_t getSum() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for string columns.
    */
-  class StringColumnStatistics : public ColumnStatistics {
-   public:
+class StringColumnStatistics : public ColumnStatistics {
+public:
     ~StringColumnStatistics() override;
 
     /**
@@ -297,13 +294,13 @@ namespace orc {
      * @return total length of all the values
      */
     virtual uint64_t getTotalLength() const = 0;
-  };
+};
 
-  /**
+/**
    * Statistics for timestamp columns.
    */
-  class TimestampColumnStatistics : public ColumnStatistics {
-   public:
+class TimestampColumnStatistics : public ColumnStatistics {
+public:
     ~TimestampColumnStatistics() override;
 
     /**
@@ -365,10 +362,10 @@ namespace orc {
      * @return last 6 digits of nanosecond of maximum timestamp.
      */
     virtual int32_t getMaximumNanos() const = 0;
-  };
+};
 
-  class Statistics {
-   public:
+class Statistics {
+public:
     virtual ~Statistics();
 
     /**
@@ -383,78 +380,10 @@ namespace orc {
      * @return the number of columns
      */
     virtual uint32_t getNumberOfColumns() const = 0;
-  };
+};
 
-  /**
-   * Statistics for all of collections such as Map and List.
-   */
-  class CollectionColumnStatistics : public ColumnStatistics {
-   public:
-    ~CollectionColumnStatistics() override;
-
-    /**
-     * check whether column has minimum number of children
-     * @return true if has minimum children count
-     */
-    virtual bool hasMinimumChildren() const = 0;
-
-    /**
-     * check whether column has maximum number of children
-     * @return true if has maximum children count
-     */
-    virtual bool hasMaximumChildren() const = 0;
-
-    /**
-     * check whether column has total number of children
-     * @return true if has total children count
-     */
-    virtual bool hasTotalChildren() const = 0;
-
-    /**
-     * set hasTotalChildren value
-     * @param newHasTotalChildren hasTotalChildren value
-     */
-    virtual void setHasTotalChildren(bool newHasTotalChildren) = 0;
-
-    /**
-     * Get minimum number of children in the collection.
-     * @return the minimum children count
-     */
-    virtual uint64_t getMinimumChildren() const = 0;
-
-    /**
-     * set new minimum children count
-     * @param min new minimum children count
-     */
-    virtual void setMinimumChildren(uint64_t min) = 0;
-
-    /**
-     * Get maximum number of children in the collection.
-     * @return the maximum children count
-     */
-    virtual uint64_t getMaximumChildren() const = 0;
-
-    /**
-     * set new maximum children count
-     * @param max new maximum children count
-     */
-    virtual void setMaximumChildren(uint64_t max) = 0;
-
-    /**
-     * Get the total number of children in the collection.
-     * @return the total number of children
-     */
-    virtual uint64_t getTotalChildren() const = 0;
-
-    /**
-     * set new total children count
-     * @param newTotalChildrenCount total children count to be set
-     */
-    virtual void setTotalChildren(uint64_t newTotalChildrenCount) = 0;
-  };
-
-  class StripeStatistics : public Statistics {
-   public:
+class StripeStatistics : public Statistics {
+public:
     ~StripeStatistics() override;
 
     /**
@@ -463,8 +392,7 @@ namespace orc {
      * @param rowIndexId RowIndex entry id
      * @return statistics of the given RowIndex entry
      */
-    virtual const ColumnStatistics* getRowIndexStatistics(uint32_t columnId,
-                                                          uint32_t rowIndexId) const = 0;
+    virtual const ColumnStatistics* getRowIndexStatistics(uint32_t columnId, uint32_t rowIndexId) const = 0;
 
     /**
      * Get the number of RowIndex statistics in a given column.
@@ -472,7 +400,5 @@ namespace orc {
      * @return the number of RowIndex statistics
      */
     virtual uint32_t getNumberOfRowIndexStats(uint32_t columnId) const = 0;
-  };
-}  // namespace orc
-
-#endif
+};
+} // namespace orc

@@ -16,23 +16,22 @@
  * limitations under the License.
  */
 
-#ifndef ORC_COMMON_HH
-#define ORC_COMMON_HH
+#pragma once
+
+#include <string>
 
 #include "orc/Exceptions.hh"
 #include "orc/Type.hh"
 #include "orc/Vector.hh"
 
-#include <string>
-
 namespace orc {
 
-  class FileVersion {
-   private:
+class FileVersion {
+private:
     uint32_t majorVersion;
     uint32_t minorVersion;
 
-   public:
+public:
     static const FileVersion& v_0_11();
     static const FileVersion& v_0_12();
     static const FileVersion& UNSTABLE_PRE_2_0();
@@ -42,40 +41,34 @@ namespace orc {
     /**
      * Get major version
      */
-    uint32_t getMajor() const {
-      return this->majorVersion;
-    }
+    uint32_t getMajor() const { return this->majorVersion; }
 
     /**
      * Get minor version
      */
-    uint32_t getMinor() const {
-      return this->minorVersion;
-    }
+    uint32_t getMinor() const { return this->minorVersion; }
 
     bool operator==(const FileVersion& right) const {
-      return this->majorVersion == right.getMajor() && this->minorVersion == right.getMinor();
+        return this->majorVersion == right.getMajor() && this->minorVersion == right.getMinor();
     }
 
-    bool operator!=(const FileVersion& right) const {
-      return !(*this == right);
-    }
+    bool operator!=(const FileVersion& right) const { return !(*this == right); }
 
     std::string toString() const;
-  };
+};
 
-  enum WriterId {
+enum WriterId {
     ORC_JAVA_WRITER = 0,
     ORC_CPP_WRITER = 1,
     PRESTO_WRITER = 2,
     SCRITCHLEY_GO = 3,
     TRINO_WRITER = 4,
     UNKNOWN_WRITER = INT32_MAX
-  };
+};
 
-  std::string writerIdToString(uint32_t id);
+std::string writerIdToString(uint32_t id);
 
-  enum CompressionKind {
+enum CompressionKind {
     CompressionKind_NONE = 0,
     CompressionKind_ZLIB = 1,
     CompressionKind_SNAPPY = 2,
@@ -83,14 +76,14 @@ namespace orc {
     CompressionKind_LZ4 = 4,
     CompressionKind_ZSTD = 5,
     CompressionKind_MAX = INT32_MAX
-  };
+};
 
-  /**
+/**
    * Get the name of the CompressionKind.
    */
-  std::string compressionKindToString(CompressionKind kind);
+std::string compressionKindToString(CompressionKind kind);
 
-  enum WriterVersion {
+enum WriterVersion {
     WriterVersion_ORIGINAL = 0,
     WriterVersion_HIVE_8732 = 1,
     WriterVersion_HIVE_4243 = 2,
@@ -102,14 +95,14 @@ namespace orc {
     WriterVersion_ORC_203 = 8,
     WriterVersion_ORC_14 = 9,
     WriterVersion_MAX = INT32_MAX
-  };
+};
 
-  /**
+/**
    * Get the name of the WriterVersion.
    */
-  std::string writerVersionToString(WriterVersion kind);
+std::string writerVersionToString(WriterVersion kind);
 
-  enum StreamKind {
+enum StreamKind {
     StreamKind_PRESENT = 0,
     StreamKind_DATA = 1,
     StreamKind_LENGTH = 2,
@@ -119,45 +112,34 @@ namespace orc {
     StreamKind_ROW_INDEX = 6,
     StreamKind_BLOOM_FILTER = 7,
     StreamKind_BLOOM_FILTER_UTF8 = 8
-  };
+};
 
-  /**
-   * Specific read intention when selecting a certain TypeId.
-   * This enum currently only being utilized by LIST, MAP, and UNION type selection.
-   */
-  enum ReadIntent {
-    ReadIntent_ALL = 0,
-
-    // Only read the offsets of selected type. Do not read the children types.
-    ReadIntent_OFFSETS = 1
-  };
-
-  /**
+/**
    * Get the string representation of the StreamKind.
    */
-  std::string streamKindToString(StreamKind kind);
+std::string streamKindToString(StreamKind kind);
 
-  class StreamInformation {
-   public:
+class StreamInformation {
+public:
     virtual ~StreamInformation();
 
     virtual StreamKind getKind() const = 0;
     virtual uint64_t getColumnId() const = 0;
     virtual uint64_t getOffset() const = 0;
     virtual uint64_t getLength() const = 0;
-  };
+};
 
-  enum ColumnEncodingKind {
+enum ColumnEncodingKind {
     ColumnEncodingKind_DIRECT = 0,
     ColumnEncodingKind_DICTIONARY = 1,
     ColumnEncodingKind_DIRECT_V2 = 2,
     ColumnEncodingKind_DICTIONARY_V2 = 3
-  };
+};
 
-  std::string columnEncodingKindToString(ColumnEncodingKind kind);
+std::string columnEncodingKindToString(ColumnEncodingKind kind);
 
-  class StripeInformation {
-   public:
+class StripeInformation {
+public:
     virtual ~StripeInformation();
 
     /**
@@ -204,7 +186,7 @@ namespace orc {
     /**
      * Get the StreamInformation for the given stream.
      */
-    virtual std::unique_ptr<StreamInformation> getStreamInformation(uint64_t streamId) const = 0;
+    virtual ORC_UNIQUE_PTR<StreamInformation> getStreamInformation(uint64_t streamId) const = 0;
 
     /**
      * Get the column encoding for the given column.
@@ -223,25 +205,25 @@ namespace orc {
      * Get the writer timezone.
      */
     virtual const std::string& getWriterTimezone() const = 0;
-  };
+};
 
-  // Return true if val1 < val2; otherwise return false
-  template <typename T>
-  inline bool compare(T val1, T val2) {
+// Return true if val1 < val2; otherwise return false
+template <typename T>
+inline bool compare(T val1, T val2) {
     return (val1 < val2);
-  }
+}
 
-  // Specialization for Decimal
-  template <>
-  inline bool compare(Decimal val1, Decimal val2) {
+// Specialization for Decimal
+template <>
+inline bool compare(Decimal val1, Decimal val2) {
     // compare integral parts
     Int128 integral1 = scaleDownInt128ByPowerOfTen(val1.value, val1.scale);
     Int128 integral2 = scaleDownInt128ByPowerOfTen(val2.value, val2.scale);
 
     if (integral1 < integral2) {
-      return true;
+        return true;
     } else if (integral1 > integral2) {
-      return false;
+        return false;
     }
 
     // integral parts are equal, continue comparing fractional parts
@@ -253,24 +235,24 @@ namespace orc {
 
     int32_t diff = val1.scale - val2.scale;
     if (diff > 0) {
-      val2.value = scaleUpInt128ByPowerOfTen(val2.value, diff, overflow);
-      if (overflow) {
-        return positive ? true : false;
-      }
+        val2.value = scaleUpInt128ByPowerOfTen(val2.value, diff, overflow);
+        if (overflow) {
+            return positive ? true : false;
+        }
     } else {
-      val1.value = scaleUpInt128ByPowerOfTen(val1.value, -diff, overflow);
-      if (overflow) {
-        return positive ? false : true;
-      }
+        val1.value = scaleUpInt128ByPowerOfTen(val1.value, -diff, overflow);
+        if (overflow) {
+            return positive ? false : true;
+        }
     }
 
     if (val1.value < val2.value) {
-      return true;
+        return true;
     }
     return false;
-  }
+}
 
-  enum BloomFilterVersion {
+enum BloomFilterVersion {
     // Include both the BLOOM_FILTER and BLOOM_FILTER_UTF8 streams to support
     // both old and new readers.
     ORIGINAL = 0,
@@ -278,32 +260,30 @@ namespace orc {
     // See ORC-101
     UTF8 = 1,
     FUTURE = INT32_MAX
-  };
+};
 
-  inline bool operator<(const Decimal& lhs, const Decimal& rhs) {
+inline bool operator<(const Decimal& lhs, const Decimal& rhs) {
     return compare(lhs, rhs);
-  }
+}
 
-  inline bool operator>(const Decimal& lhs, const Decimal& rhs) {
+inline bool operator>(const Decimal& lhs, const Decimal& rhs) {
     return rhs < lhs;
-  }
+}
 
-  inline bool operator<=(const Decimal& lhs, const Decimal& rhs) {
+inline bool operator<=(const Decimal& lhs, const Decimal& rhs) {
     return !(lhs > rhs);
-  }
+}
 
-  inline bool operator>=(const Decimal& lhs, const Decimal& rhs) {
+inline bool operator>=(const Decimal& lhs, const Decimal& rhs) {
     return !(lhs < rhs);
-  }
+}
 
-  inline bool operator!=(const Decimal& lhs, const Decimal& rhs) {
+inline bool operator!=(const Decimal& lhs, const Decimal& rhs) {
     return lhs < rhs || rhs < lhs;
-  }
+}
 
-  inline bool operator==(const Decimal& lhs, const Decimal& rhs) {
+inline bool operator==(const Decimal& lhs, const Decimal& rhs) {
     return !(lhs != rhs);
-  }
+}
 
-}  // namespace orc
-
-#endif
+} // namespace orc

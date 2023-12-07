@@ -22,7 +22,7 @@
 
 namespace orc {
 
-  TEST(TestBloomFilter, testBitSetEqual) {
+TEST(TestBloomFilter, testBitSetEqual) {
     BitSet bitSet64_1(64), bitSet64_2(64), bitSet32(128);
     EXPECT_TRUE(bitSet64_1 == bitSet64_2);
     EXPECT_FALSE(bitSet64_1 == bitSet32);
@@ -47,32 +47,32 @@ namespace orc {
     bitSet64_1.clear();
     bitSet64_2.clear();
     EXPECT_TRUE(bitSet64_1 == bitSet64_2);
-  }
+}
 
-  // ported from Java ORC
-  TEST(TestBloomFilter, testSetGetBitSet) {
+// ported from Java ORC
+TEST(TestBloomFilter, testSetGetBitSet) {
     BitSet bitset(128);
 
     // set every 9th bit for a rotating pattern
     for (uint64_t l = 0; l < 8; ++l) {
-      bitset.set(l * 9);
+        bitset.set(l * 9);
     }
 
     // set every non-9th bit
     for (uint64_t l = 8; l < 16; ++l) {
-      for (uint64_t b = 0; b < 8; ++b) {
-        if (b != l - 8) {
-          bitset.set(l * 8 + b);
+        for (uint64_t b = 0; b < 8; ++b) {
+            if (b != l - 8) {
+                bitset.set(l * 8 + b);
+            }
         }
-      }
     }
 
     for (uint64_t b = 0; b < 64; ++b) {
-      EXPECT_EQ(b % 9 == 0, bitset.get(b));
+        EXPECT_EQ(b % 9 == 0, bitset.get(b));
     }
 
     for (uint64_t b = 64; b < 128; ++b) {
-      EXPECT_EQ((b % 8) != (b - 64) / 8, bitset.get(b));
+        EXPECT_EQ((b % 8) != (b - 64) / 8, bitset.get(b));
     }
 
     // test that the longs are mapped correctly
@@ -80,12 +80,12 @@ namespace orc {
     EXPECT_EQ(128, bitset.bitSize());
     EXPECT_EQ(0x8040201008040201L, longs[0]);
     EXPECT_EQ(~0x8040201008040201L, longs[1]);
-  }
+}
 
-  // Same test as TestBloomFilter#testLongHash() in Java codes. Make sure the hash values
-  // are consistent between the Java client and C++ client.
-  // TODO(ORC-1025): Add exhaustive test on all numbers.
-  TEST(TestBloomFilter, testLongHash) {
+// Same test as TestBloomFilter#testLongHash() in Java codes. Make sure the hash values
+// are consistent between the Java client and C++ client.
+// TODO(ORC-1025): Add exhaustive test on all numbers.
+TEST(TestBloomFilter, testLongHash) {
     EXPECT_EQ(0, orc::getLongHash(0));
     EXPECT_EQ(6614246905173314819, orc::getLongHash(-1));
     EXPECT_EQ(-5218250166726157773, orc::getLongHash(-2));
@@ -103,19 +103,19 @@ namespace orc {
     EXPECT_EQ(-4986173376161118712, orc::getLongHash(9223372036064673413));
     EXPECT_EQ(3785699328822078862, orc::getLongHash(9223372036064673414));
     EXPECT_EQ(294188322706112357, orc::getLongHash(9223372036064673415));
-  }
+}
 
 #define CheckBitSet(bf, p1, p2, p3, p4, p5) \
-  EXPECT_TRUE(bf.mBitSet->get(p1));         \
-  EXPECT_TRUE(bf.mBitSet->get(p2));         \
-  EXPECT_TRUE(bf.mBitSet->get(p3));         \
-  EXPECT_TRUE(bf.mBitSet->get(p4));         \
-  EXPECT_TRUE(bf.mBitSet->get(p5))
+    EXPECT_TRUE(bf.mBitSet->get(p1));       \
+    EXPECT_TRUE(bf.mBitSet->get(p2));       \
+    EXPECT_TRUE(bf.mBitSet->get(p3));       \
+    EXPECT_TRUE(bf.mBitSet->get(p4));       \
+    EXPECT_TRUE(bf.mBitSet->get(p5))
 
-  // Same test as TestBloomFilter#testBasicOperations() in Java codes. We also
-  // verifies the bitSet positions that are set, to make sure both the Java and C++ codes
-  // hash the same value into the same position.
-  TEST(TestBloomFilter, testBloomFilterBasicOperations) {
+// Same test as TestBloomFilter#testBasicOperations() in Java codes. We also
+// verifies the bitSet positions that are set, to make sure both the Java and C++ codes
+// hash the same value into the same position.
+TEST(TestBloomFilter, testBloomFilterBasicOperations) {
     BloomFilterImpl bloomFilter(128);
 
     // test integers
@@ -220,9 +220,9 @@ namespace orc {
     EXPECT_TRUE(bloomFilter.testBytes(emptyStr, static_cast<int64_t>(strlen(emptyStr))));
     EXPECT_TRUE(bloomFilter.testBytes(enStr, static_cast<int64_t>(strlen(enStr))));
     EXPECT_TRUE(bloomFilter.testBytes(cnStr, static_cast<int64_t>(strlen(cnStr))));
-  }
+}
 
-  TEST(TestBloomFilter, testBloomFilterSerialization) {
+TEST(TestBloomFilter, testBloomFilterSerialization) {
     BloomFilterImpl emptyFilter1(128), emptyFilter2(256);
     EXPECT_FALSE(emptyFilter1 == emptyFilter2);
 
@@ -248,8 +248,8 @@ namespace orc {
     BloomFilterUTF8Utils::serialize(srcBloomFilter, pbBloomFilter);
 
     // deserialize
-    std::unique_ptr<BloomFilter> dstBloomFilter = BloomFilterUTF8Utils::deserialize(
-        proto::Stream_Kind_BLOOM_FILTER_UTF8, encoding, pbBloomFilter);
+    std::unique_ptr<BloomFilter> dstBloomFilter =
+            BloomFilterUTF8Utils::deserialize(proto::Stream_Kind_BLOOM_FILTER_UTF8, encoding, pbBloomFilter);
 
     EXPECT_TRUE(srcBloomFilter == dynamic_cast<BloomFilterImpl&>(*dstBloomFilter));
     EXPECT_TRUE(dstBloomFilter->testLong(1));
@@ -261,6 +261,6 @@ namespace orc {
     EXPECT_TRUE(dstBloomFilter->testLong(-11));
     EXPECT_TRUE(dstBloomFilter->testLong(-111));
     EXPECT_TRUE(dstBloomFilter->testLong(-1111));
-  }
+}
 
-}  // namespace orc
+} // namespace orc

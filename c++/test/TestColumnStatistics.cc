@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
+#include <cmath>
+
 #include "Statistics.hh"
 #include "orc/OrcFile.hh"
 #include "wrap/gmock.h"
 #include "wrap/gtest-wrapper.h"
 
-#include <cmath>
-
 namespace orc {
 
-  TEST(ColumnStatistics, intColumnStatistics) {
-    auto intStats = std::make_unique<IntegerColumnStatisticsImpl>();
+TEST(ColumnStatistics, intColumnStatistics) {
+    std::unique_ptr<IntegerColumnStatisticsImpl> intStats(new IntegerColumnStatisticsImpl());
 
     // initial state
     EXPECT_EQ(0, intStats->getNumberOfValues());
@@ -69,7 +69,7 @@ namespace orc {
     EXPECT_EQ(51, intStats->getSum());
 
     // test merge
-    auto other = std::make_unique<IntegerColumnStatisticsImpl>();
+    std::unique_ptr<IntegerColumnStatisticsImpl> other(new IntegerColumnStatisticsImpl());
 
     other->setHasNull(true);
     other->increase(100);
@@ -105,16 +105,15 @@ namespace orc {
     intStats->merge(*other);
     EXPECT_FALSE(intStats->hasSum());
 
-    auto intStats2 = std::make_unique<IntegerColumnStatisticsImpl>();
-
+    std::unique_ptr<IntegerColumnStatisticsImpl> intStats2(new IntegerColumnStatisticsImpl());
     intStats2->update(1, 1);
     EXPECT_TRUE(intStats2->hasSum());
     intStats2->update(std::numeric_limits<int64_t>::max(), 3);
     EXPECT_FALSE(intStats2->hasSum());
-  }
+}
 
-  TEST(ColumnStatistics, doubleColumnStatistics) {
-    auto dblStats = std::make_unique<DoubleColumnStatisticsImpl>();
+TEST(ColumnStatistics, doubleColumnStatistics) {
+    std::unique_ptr<DoubleColumnStatisticsImpl> dblStats(new DoubleColumnStatisticsImpl());
 
     // initial state
     EXPECT_EQ(0, dblStats->getNumberOfValues());
@@ -156,7 +155,7 @@ namespace orc {
     EXPECT_TRUE(std::abs(-95454.5343 - dblStats->getMinimum()) < 0.00001);
 
     // test merge
-    auto other = std::make_unique<DoubleColumnStatisticsImpl>();
+    std::unique_ptr<DoubleColumnStatisticsImpl> other(new DoubleColumnStatisticsImpl());
 
     other->setHasNull(true);
     other->increase(987);
@@ -175,10 +174,10 @@ namespace orc {
     EXPECT_TRUE(std::abs(1000232.5355 - dblStats->getMaximum()) < 0.00001);
     EXPECT_TRUE(std::abs(-95454.5343 - dblStats->getMinimum()) < 0.00001);
     EXPECT_TRUE(std::abs(971341.3203 - dblStats->getSum()) < 0.00001);
-  }
+}
 
-  TEST(ColumnStatistics, stringColumnStatistics) {
-    auto strStats = std::make_unique<StringColumnStatisticsImpl>();
+TEST(ColumnStatistics, stringColumnStatistics) {
+    std::unique_ptr<StringColumnStatisticsImpl> strStats(new StringColumnStatisticsImpl());
 
     EXPECT_FALSE(strStats->hasMinimum());
     EXPECT_FALSE(strStats->hasMaximum());
@@ -213,10 +212,10 @@ namespace orc {
     EXPECT_EQ(9, strStats->getTotalLength());
     EXPECT_EQ("abcd", strStats->getMaximum());
     EXPECT_EQ("", strStats->getMinimum());
-  }
+}
 
-  TEST(ColumnStatistics, boolColumnStatistics) {
-    auto boolStats = std::make_unique<BooleanColumnStatisticsImpl>();
+TEST(ColumnStatistics, boolColumnStatistics) {
+    std::unique_ptr<BooleanColumnStatisticsImpl> boolStats(new BooleanColumnStatisticsImpl());
 
     // initial state
     EXPECT_EQ(0, boolStats->getNumberOfValues());
@@ -233,7 +232,7 @@ namespace orc {
     EXPECT_EQ(3, boolStats->getTrueCount());
 
     // test merge
-    auto other = std::make_unique<BooleanColumnStatisticsImpl>();
+    std::unique_ptr<BooleanColumnStatisticsImpl> other(new BooleanColumnStatisticsImpl());
 
     other->setHasNull(true);
     other->increase(100);
@@ -245,10 +244,10 @@ namespace orc {
     EXPECT_TRUE(boolStats->hasNull());
     EXPECT_EQ(53, boolStats->getTrueCount());
     EXPECT_EQ(52, boolStats->getFalseCount());
-  }
+}
 
-  TEST(ColumnStatistics, timestampColumnStatistics) {
-    auto tsStats = std::make_unique<TimestampColumnStatisticsImpl>();
+TEST(ColumnStatistics, timestampColumnStatistics) {
+    std::unique_ptr<TimestampColumnStatisticsImpl> tsStats(new TimestampColumnStatisticsImpl());
 
     EXPECT_FALSE(tsStats->hasMaximum() || tsStats->hasMaximum());
 
@@ -266,7 +265,7 @@ namespace orc {
     EXPECT_EQ(999999, tsStats->getMaximumNanos());
 
     // test merge
-    auto other = std::make_unique<TimestampColumnStatisticsImpl>();
+    std::unique_ptr<TimestampColumnStatisticsImpl> other(new TimestampColumnStatisticsImpl());
 
     other->setMaximum(160);
     other->setMinimum(90);
@@ -276,10 +275,10 @@ namespace orc {
     EXPECT_EQ(90, tsStats->getMinimum());
     EXPECT_EQ(0, tsStats->getMinimumNanos());
     EXPECT_EQ(999999, tsStats->getMaximumNanos());
-  }
+}
 
-  TEST(ColumnStatistics, dateColumnStatistics) {
-    auto tsStats = std::make_unique<DateColumnStatisticsImpl>();
+TEST(ColumnStatistics, dateColumnStatistics) {
+    std::unique_ptr<DateColumnStatisticsImpl> tsStats(new DateColumnStatisticsImpl());
 
     EXPECT_FALSE(tsStats->hasMaximum() || tsStats->hasMaximum());
 
@@ -293,7 +292,7 @@ namespace orc {
     EXPECT_EQ(100, tsStats->getMinimum());
 
     // test merge
-    auto other = std::make_unique<DateColumnStatisticsImpl>();
+    std::unique_ptr<DateColumnStatisticsImpl> other(new DateColumnStatisticsImpl());
 
     other->setMaximum(160);
     other->setMinimum(90);
@@ -301,10 +300,10 @@ namespace orc {
     tsStats->merge(*other);
     EXPECT_EQ(160, other->getMaximum());
     EXPECT_EQ(90, other->getMinimum());
-  }
+}
 
-  TEST(ColumnStatistics, otherColumnStatistics) {
-    auto stats = std::make_unique<ColumnStatisticsImpl>();
+TEST(ColumnStatistics, otherColumnStatistics) {
+    std::unique_ptr<ColumnStatisticsImpl> stats(new ColumnStatisticsImpl());
 
     EXPECT_EQ(0, stats->getNumberOfValues());
     EXPECT_FALSE(stats->hasNull());
@@ -317,10 +316,10 @@ namespace orc {
 
     stats->setHasNull(true);
     EXPECT_TRUE(stats->hasNull());
-  }
+}
 
-  TEST(ColumnStatistics, decimalColumnStatistics) {
-    auto decStats = std::make_unique<DecimalColumnStatisticsImpl>();
+TEST(ColumnStatistics, decimalColumnStatistics) {
+    std::unique_ptr<DecimalColumnStatisticsImpl> decStats(new DecimalColumnStatisticsImpl());
 
     // initial state
     EXPECT_EQ(0, decStats->getNumberOfValues());
@@ -383,15 +382,15 @@ namespace orc {
     // test sum overflow
     decStats->update(Decimal(Int128("123456789012345678901234567890"), 10));
     EXPECT_FALSE(decStats->hasSum());
-  }
+}
 
-  TEST(ColumnStatistics, timestampColumnStatisticsWithNanos) {
-    auto tsStats = std::make_unique<TimestampColumnStatisticsImpl>();
+TEST(ColumnStatistics, timestampColumnStatisticsWithNanos) {
+    std::unique_ptr<TimestampColumnStatisticsImpl> tsStats(new TimestampColumnStatisticsImpl());
 
     // normal operations
     for (int32_t i = 1; i <= 1024; ++i) {
-      tsStats->update(i * 100, i * 1000);
-      tsStats->increase(1);
+        tsStats->update(i * 100, i * 1000);
+        tsStats->increase(1);
     }
     EXPECT_EQ(102400, tsStats->getMaximum());
     EXPECT_EQ(1024000, tsStats->getMaximumNanos());
@@ -409,10 +408,10 @@ namespace orc {
     EXPECT_EQ(999, tsStats->getMinimumNanos());
 
     // test merge with no change
-    auto other1 = std::make_unique<TimestampColumnStatisticsImpl>();
+    std::unique_ptr<TimestampColumnStatisticsImpl> other1(new TimestampColumnStatisticsImpl());
     for (int32_t i = 1; i <= 1024; ++i) {
-      other1->update(i * 100, i * 1000);
-      other1->increase(1);
+        other1->update(i * 100, i * 1000);
+        other1->increase(1);
     }
     tsStats->merge(*other1);
     EXPECT_EQ(102400, tsStats->getMaximum());
@@ -421,7 +420,7 @@ namespace orc {
     EXPECT_EQ(999, tsStats->getMinimumNanos());
 
     // test merge with min/max change only in nano
-    auto other2 = std::make_unique<TimestampColumnStatisticsImpl>();
+    std::unique_ptr<TimestampColumnStatisticsImpl> other2(new TimestampColumnStatisticsImpl());
     other2->update(102400, 1024002);
     other2->update(100, 998);
     tsStats->merge(*other2);
@@ -431,7 +430,7 @@ namespace orc {
     EXPECT_EQ(998, tsStats->getMinimumNanos());
 
     // test merge with min/max change in milli
-    auto other3 = std::make_unique<TimestampColumnStatisticsImpl>();
+    std::unique_ptr<TimestampColumnStatisticsImpl> other3(new TimestampColumnStatisticsImpl());
     other3->update(102401, 1);
     other3->update(99, 1);
     tsStats->merge(*other3);
@@ -439,10 +438,10 @@ namespace orc {
     EXPECT_EQ(1, tsStats->getMaximumNanos());
     EXPECT_EQ(99, tsStats->getMinimum());
     EXPECT_EQ(1, tsStats->getMinimumNanos());
-  }
+}
 
-  TEST(ColumnStatistics, timestampColumnStatisticsProbubuf) {
-    auto tsStats = std::make_unique<TimestampColumnStatisticsImpl>();
+TEST(ColumnStatistics, timestampColumnStatisticsProbubuf) {
+    std::unique_ptr<TimestampColumnStatisticsImpl> tsStats(new TimestampColumnStatisticsImpl());
     tsStats->increase(2);
     tsStats->update(100);
     tsStats->update(200);
@@ -455,7 +454,7 @@ namespace orc {
     EXPECT_FALSE(pbStats.timestampstatistics().has_maximumnanos());
 
     StatContext ctx(true, nullptr);
-    auto tsStatsFromPb = std::make_unique<TimestampColumnStatisticsImpl>(pbStats, ctx);
+    std::unique_ptr<TimestampColumnStatisticsImpl> tsStatsFromPb(new TimestampColumnStatisticsImpl(pbStats, ctx));
     EXPECT_EQ(100, tsStatsFromPb->getMinimum());
     EXPECT_EQ(200, tsStatsFromPb->getMaximum());
     EXPECT_EQ(0, tsStatsFromPb->getMinimumNanos());
@@ -477,58 +476,6 @@ namespace orc {
     EXPECT_EQ(500, tsStatsFromPb->getMaximum());
     EXPECT_EQ(5555, tsStatsFromPb->getMinimumNanos());
     EXPECT_EQ(9999, tsStatsFromPb->getMaximumNanos());
-  }
+}
 
-  TEST(ColumnStatistics, collectionColumnStatistics) {
-    auto collectionStats = std::make_unique<CollectionColumnStatisticsImpl>();
-
-    // initial state
-    EXPECT_EQ(0, collectionStats->getNumberOfValues());
-    EXPECT_FALSE(collectionStats->hasNull());
-    EXPECT_FALSE(collectionStats->hasMinimumChildren());
-    EXPECT_FALSE(collectionStats->hasMaximumChildren());
-    EXPECT_TRUE(collectionStats->hasTotalChildren());
-    EXPECT_EQ(0, collectionStats->getTotalChildren());
-
-    // normal operations
-    collectionStats->increase(1);
-    EXPECT_EQ(1, collectionStats->getNumberOfValues());
-
-    collectionStats->increase(0);
-    EXPECT_EQ(1, collectionStats->getNumberOfValues());
-
-    collectionStats->increase(9999999999999999l);
-    EXPECT_EQ(10000000000000000l, collectionStats->getNumberOfValues());
-
-    collectionStats->update(10);
-    EXPECT_EQ(10, collectionStats->getMaximumChildren());
-    EXPECT_EQ(10, collectionStats->getMinimumChildren());
-
-    collectionStats->update(20);
-    EXPECT_EQ(20, collectionStats->getMaximumChildren());
-    EXPECT_EQ(10, collectionStats->getMinimumChildren());
-
-    EXPECT_EQ(30, collectionStats->getTotalChildren());
-    // test merge
-    auto other = std::make_unique<CollectionColumnStatisticsImpl>();
-
-    other->update(40);
-    other->update(30);
-
-    collectionStats->merge(*other);
-    EXPECT_EQ(40, other->getMaximumChildren());
-    EXPECT_EQ(30, other->getMinimumChildren());
-    EXPECT_EQ(40, collectionStats->getMaximumChildren());
-    EXPECT_EQ(10, collectionStats->getMinimumChildren());
-    EXPECT_EQ(100, collectionStats->getTotalChildren());
-
-    // test overflow
-    other->update(std::numeric_limits<uint64_t>::max());
-    EXPECT_FALSE(other->hasTotalChildren());
-    // test merge overflow
-    other->setTotalChildren(std::numeric_limits<uint64_t>::max() - 50);
-    EXPECT_EQ(std::numeric_limits<uint64_t>::max() - 50, other->getTotalChildren());
-    collectionStats->merge(*other);
-    EXPECT_FALSE(collectionStats->hasTotalChildren());
-  }
-}  // namespace orc
+} // namespace orc

@@ -16,37 +16,37 @@
  * limitations under the License.
  */
 
-#ifndef ORC_RLE_HH
-#define ORC_RLE_HH
+#pragma once
+
+#include <memory>
 
 #include "io/InputStream.hh"
 #include "io/OutputStream.hh"
 
-#include <memory>
-
 namespace orc {
 
-  inline int64_t zigZag(int64_t value) {
+inline int64_t zigZag(int64_t value) {
     return (value << 1) ^ (value >> 63);
-  }
+}
 
-  inline int64_t unZigZag(uint64_t value) {
-    return value >> 1 ^ -(value & 1);
-  }
+inline int64_t unZigZag(uint64_t value) {
+    uint64_t mask = value & 1;
+    return value >> 1 ^ (~mask + 1);
+}
 
-  class RleEncoder {
-   public:
+class RleEncoder {
+public:
     // must be non-inline!
     virtual ~RleEncoder();
 
     RleEncoder(std::unique_ptr<BufferedOutputStream> outStream, bool hasSigned)
-        : outputStream(std::move(outStream)),
-          bufferPosition(0),
-          bufferLength(0),
-          numLiterals(0),
-          isSigned(hasSigned),
-          buffer(nullptr) {
-      // pass
+            : outputStream(std::move(outStream)),
+              bufferPosition(0),
+              bufferLength(0),
+              numLiterals(0),
+              isSigned(hasSigned),
+              buffer(nullptr) {
+        //pass
     }
 
     /**
@@ -56,20 +56,12 @@ namespace orc {
      * @param notNull If the pointer is null, all values are read. If the
      *    pointer is not null, positions that are false are skipped.
      */
-    template <typename T>
-    void add(const T* data, uint64_t numValues, const char* notNull);
-
     virtual void add(const int64_t* data, uint64_t numValues, const char* notNull);
 
-    virtual void add(const int32_t* data, uint64_t numValues, const char* notNull);
-
-    virtual void add(const int16_t* data, uint64_t numValues, const char* notNull);
     /**
      * Get size of buffer used so far.
      */
-    uint64_t getBufferSize() const {
-      return outputStream->getSize();
-    }
+    uint64_t getBufferSize() const { return outputStream->getSize(); }
 
     /**
      * Flushing underlying BufferedOutputStream
@@ -84,7 +76,7 @@ namespace orc {
 
     virtual void write(int64_t val) = 0;
 
-   protected:
+protected:
     std::unique_ptr<BufferedOutputStream> outputStream;
     size_t bufferPosition;
     size_t bufferLength;
@@ -98,15 +90,15 @@ namespace orc {
     virtual void writeVulong(int64_t val);
 
     virtual void writeVslong(int64_t val);
-  };
+};
 
-  class RleDecoder {
-   public:
+class RleDecoder {
+public:
     // must be non-inline!
     virtual ~RleDecoder();
 
     RleDecoder(ReaderMetrics* _metrics) : metrics(_metrics) {
-      // pass
+        // pass
     }
 
     /**
@@ -128,36 +120,29 @@ namespace orc {
      */
     virtual void next(int64_t* data, uint64_t numValues, const char* notNull) = 0;
 
-    virtual void next(int32_t* data, uint64_t numValues, const char* notNull) = 0;
-
-    virtual void next(int16_t* data, uint64_t numValues, const char* notNull) = 0;
-
-   protected:
+protected:
     ReaderMetrics* metrics;
-  };
+};
 
-  /**
+/**
    * Create an RLE encoder.
    * @param output the output stream to write to
    * @param isSigned true if the number sequence is signed
    * @param version version of RLE decoding to do
    * @param pool memory pool to use for allocation
    */
-  std::unique_ptr<RleEncoder> createRleEncoder(std::unique_ptr<BufferedOutputStream> output,
-                                               bool isSigned, RleVersion version, MemoryPool& pool,
-                                               bool alignedBitpacking);
+std::unique_ptr<RleEncoder> createRleEncoder(std::unique_ptr<BufferedOutputStream> output, bool isSigned,
+                                             RleVersion version, MemoryPool& pool, bool alignedBitpacking);
 
-  /**
+/**
    * Create an RLE decoder.
    * @param input the input stream to read from
    * @param isSigned true if the number sequence is signed
    * @param version version of RLE decoding to do
    * @param pool memory pool to use for allocation
    */
-  std::unique_ptr<RleDecoder> createRleDecoder(std::unique_ptr<SeekableInputStream> input,
-                                               bool isSigned, RleVersion version, MemoryPool& pool,
-                                               ReaderMetrics* metrics);
+std::unique_ptr<RleDecoder> createRleDecoder(std::unique_ptr<SeekableInputStream> input, bool isSigned,
+                                             RleVersion version, MemoryPool& pool, ReaderMetrics* metrics,
+                                             DataBuffer<char>* sharedBufferPtr);
 
-}  // namespace orc
-
-#endif  // ORC_RLE_HH
+} // namespace orc

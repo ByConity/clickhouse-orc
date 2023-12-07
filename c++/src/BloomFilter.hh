@@ -16,24 +16,23 @@
  * limitations under the License.
  */
 
-#ifndef ORC_BLOOMFILTER_IMPL_HH
-#define ORC_BLOOMFILTER_IMPL_HH
-
-#include "orc/BloomFilter.hh"
-#include "wrap/orc-proto-wrapper.hh"
+#pragma once
 
 #include <cmath>
 #include <sstream>
 #include <vector>
 
+#include "orc/BloomFilter.hh"
+#include "wrap/orc-proto-wrapper.hh"
+
 namespace orc {
 
-  /**
+/**
    * Bare metal bit set implementation. For performance reasons, this implementation does not check
    * for index bounds nor expand the bit set size if the specified index is greater than the size.
    */
-  class BitSet {
-   public:
+class BitSet {
+public:
     /**
      * Creates an empty BitSet
      *
@@ -89,11 +88,11 @@ namespace orc {
      */
     bool operator==(const BitSet& other) const;
 
-   private:
+private:
     std::vector<uint64_t> mData;
-  };
+};
 
-  /**
+/**
    * BloomFilter is a probabilistic data structure for set membership check.
    * BloomFilters are highly space efficient when compared to using a HashSet.
    * Because of the probabilistic nature of bloom filter false positive (element
@@ -119,8 +118,8 @@ namespace orc {
    * the JVM default character set for strings. All new users should
    * BloomFilterUtf8, which always uses UTF8 for the encoding.
    */
-  class BloomFilterImpl : public BloomFilter {
-   public:
+class BloomFilterImpl : public BloomFilter {
+public:
     /**
      * Creates an empty BloomFilter
      *
@@ -160,10 +159,9 @@ namespace orc {
 
     bool operator==(const BloomFilterImpl& other) const;
 
-   private:
+private:
     friend struct BloomFilterUTF8Utils;
     friend class TestBloomFilter_testBloomFilterBasicOperations_Test;
-
     // compute k hash values from hash64 and set bits
     void addHash(int64_t hash64);
 
@@ -172,38 +170,34 @@ namespace orc {
 
     void serialize(proto::BloomFilter& bloomFilter) const;
 
-   private:
+private:
     static constexpr double DEFAULT_FPP = 0.05;
     uint64_t mNumBits;
     int32_t mNumHashFunctions;
     std::unique_ptr<BitSet> mBitSet;
-  };
+};
 
-  struct BloomFilterUTF8Utils {
+struct BloomFilterUTF8Utils {
     // serialize BloomFilter in protobuf
-    static void serialize(const BloomFilterImpl& in, proto::BloomFilter& out) {
-      in.serialize(out);
-    }
+    static void serialize(const BloomFilterImpl& in, proto::BloomFilter& out) { in.serialize(out); }
 
     // deserialize BloomFilter from protobuf
     static std::unique_ptr<BloomFilter> deserialize(const proto::Stream_Kind& streamKind,
                                                     const proto::ColumnEncoding& columnEncoding,
                                                     const proto::BloomFilter& bloomFilter);
-  };
+};
 
-  // Thomas Wang's integer hash function
-  // http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm
-  // Put this in header file so tests can use it as well.
-  inline int64_t getLongHash(int64_t key) {
-    key = (~key) + (key << 21);  // key = (key << 21) - key - 1;
+// Thomas Wang's integer hash function
+// http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm
+// Put this in header file so tests can use it as well.
+inline int64_t getLongHash(int64_t key) {
+    key = (~key) + (key << 21); // key = (key << 21) - key - 1;
     key = key ^ (key >> 24);
-    key = (key + (key << 3)) + (key << 8);  // key * 265
+    key = (key + (key << 3)) + (key << 8); // key * 265
     key = key ^ (key >> 14);
-    key = (key + (key << 2)) + (key << 4);  // key * 21
+    key = (key + (key << 2)) + (key << 4); // key * 21
     key = key ^ (key >> 28);
     key = key + (key << 31);
     return key;
-  }
-}  // namespace orc
-
-#endif  // ORC_BLOOMFILTER_IMPL_HH
+}
+} // namespace orc

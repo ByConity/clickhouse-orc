@@ -16,15 +16,14 @@
  * limitations under the License.
  */
 
-#ifndef ORC_COMPRESSION_HH
-#define ORC_COMPRESSION_HH
+#pragma once
 
 #include "io/InputStream.hh"
 #include "io/OutputStream.hh"
 
 namespace orc {
 
-  /**
+/**
    * Create a decompressor for the given compression kind.
    * @param kind the compression type to implement
    * @param input the input stream that is the underlying source
@@ -32,11 +31,11 @@ namespace orc {
    * @param pool the memory pool
    * @param metrics the reader metrics
    */
-  std::unique_ptr<SeekableInputStream> createDecompressor(
-      CompressionKind kind, std::unique_ptr<SeekableInputStream> input, uint64_t bufferSize,
-      MemoryPool& pool, ReaderMetrics* metrics);
+std::unique_ptr<SeekableInputStream> createDecompressor(CompressionKind kind,
+                                                        std::unique_ptr<SeekableInputStream> input, uint64_t bufferSize,
+                                                        MemoryPool& pool, ReaderMetrics* metrics);
 
-  /**
+/**
    * Create a compressor for the given compression kind.
    * @param kind the compression type to implement
    * @param outStream the output stream that is the underlying target
@@ -45,12 +44,7 @@ namespace orc {
    * @param compressionBlockSize compression buffer block size
    * @param pool the memory pool
    */
-  std::unique_ptr<BufferedOutputStream> createCompressor(CompressionKind kind,
-                                                         OutputStream* outStream,
-                                                         CompressionStrategy strategy,
-                                                         uint64_t bufferCapacity,
-                                                         uint64_t compressionBlockSize,
-                                                         MemoryPool& pool, WriterMetrics* metrics);
-}  // namespace orc
-
-#endif
+std::unique_ptr<BufferedOutputStream> createCompressor(CompressionKind kind, OutputStream* outStream,
+                                                       CompressionStrategy strategy, uint64_t bufferCapacity,
+                                                       uint64_t compressionBlockSize, MemoryPool& pool);
+} // namespace orc

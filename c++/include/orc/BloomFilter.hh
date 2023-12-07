@@ -16,30 +16,27 @@
  * limitations under the License.
  */
 
-#ifndef ORC_BLOOMFILTER_HH
-#define ORC_BLOOMFILTER_HH
-
-#include "orc/orc-config.hh"
+#pragma once
 
 #include <memory>
 #include <vector>
 
+#include "orc/orc-config.hh"
+
 namespace orc {
 
-  class BloomFilter {
-   public:
+class BloomFilter {
+public:
     virtual ~BloomFilter();
 
     // test if the element exists in BloomFilter
     virtual bool testBytes(const char* data, int64_t length) const = 0;
     virtual bool testLong(int64_t data) const = 0;
     virtual bool testDouble(double data) const = 0;
-  };
+};
 
-  struct BloomFilterIndex {
+struct BloomFilterIndex {
     std::vector<std::shared_ptr<BloomFilter>> entries;
-  };
+};
 
-}  // namespace orc
-
-#endif  // ORC_BLOOMFILTER_HH
+} // namespace orc

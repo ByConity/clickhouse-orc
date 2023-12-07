@@ -16,37 +16,35 @@
  * limitations under the License.
  */
 
-#ifndef ORC_EXPRESSIONTREE_HH
-#define ORC_EXPRESSIONTREE_HH
-
-#include "orc/sargs/TruthValue.hh"
+#pragma once
 
 #include <limits>
 #include <memory>
-#include <string>
 #include <vector>
+
+#include "orc/sargs/TruthValue.hh"
 
 static const size_t UNUSED_LEAF = std::numeric_limits<size_t>::max();
 
 namespace orc {
 
-  class ExpressionTree;
-  typedef std::shared_ptr<ExpressionTree> TreeNode;
-  typedef std::initializer_list<TreeNode> NodeList;
+class ExpressionTree;
+typedef std::shared_ptr<ExpressionTree> TreeNode;
+typedef std::initializer_list<TreeNode> NodeList;
 
-  /**
+/**
    * The inner representation of the SearchArgument. Most users should not
    * need this interface, it is only for file formats that need to translate
    * the SearchArgument into an internal form.
    */
-  class ExpressionTree {
-   public:
+class ExpressionTree {
+public:
     enum class Operator { OR, AND, NOT, LEAF, CONSTANT };
 
-    explicit ExpressionTree(Operator op);
+    ExpressionTree(Operator op);
     ExpressionTree(Operator op, std::initializer_list<TreeNode> children);
-    explicit ExpressionTree(size_t leaf);
-    explicit ExpressionTree(TruthValue constant);
+    ExpressionTree(size_t leaf);
+    ExpressionTree(TruthValue constant);
 
     ExpressionTree(const ExpressionTree& other);
     ExpressionTree& operator=(const ExpressionTree&) = delete;
@@ -57,9 +55,9 @@ namespace orc {
 
     std::vector<TreeNode>& getChildren();
 
-    const TreeNode& getChild(size_t i) const;
+    const TreeNode getChild(size_t i) const;
 
-    TreeNode& getChild(size_t i);
+    TreeNode getChild(size_t i);
 
     TruthValue getConstant() const;
 
@@ -67,19 +65,17 @@ namespace orc {
 
     void setLeaf(size_t leaf);
 
-    void addChild(TreeNode child);
+    void addChild(const TreeNode& child);
 
     std::string toString() const;
 
     TruthValue evaluate(const std::vector<TruthValue>& leaves) const;
 
-   private:
+private:
     Operator mOperator;
     std::vector<TreeNode> mChildren;
     size_t mLeaf;
     TruthValue mConstant;
-  };
+};
 
-}  // namespace orc
-
-#endif  // ORC_EXPRESSIONTREE_HH
+} // namespace orc

@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-#ifndef ORC_TYPE_HH
-#define ORC_TYPE_HH
+#pragma once
 
 #include "MemoryPool.hh"
 #include "orc/Vector.hh"
@@ -25,7 +24,7 @@
 
 namespace orc {
 
-  enum TypeKind {
+enum TypeKind {
     BOOLEAN = 0,
     BYTE = 1,
     SHORT = 2,
@@ -45,17 +44,19 @@ namespace orc {
     VARCHAR = 16,
     CHAR = 17,
     TIMESTAMP_INSTANT = 18
-  };
+};
 
-  class Type {
-   public:
+class Type {
+public:
     virtual ~Type();
     virtual uint64_t getColumnId() const = 0;
     virtual uint64_t getMaximumColumnId() const = 0;
     virtual TypeKind getKind() const = 0;
     virtual uint64_t getSubtypeCount() const = 0;
     virtual const Type* getSubtype(uint64_t childId) const = 0;
+    virtual const Type* getSubtypeByColumnId(uint64_t columnId) const = 0;
     virtual const std::string& getFieldName(uint64_t childId) const = 0;
+    virtual uint64_t getFieldNamesCount() const = 0;
     virtual uint64_t getMaximumLength() const = 0;
     virtual uint64_t getPrecision() const = 0;
     virtual uint64_t getScale() const = 0;
@@ -65,22 +66,12 @@ namespace orc {
     virtual std::vector<std::string> getAttributeKeys() const = 0;
     virtual std::string getAttributeValue(const std::string& key) const = 0;
     virtual std::string toString() const = 0;
-    /**
-     * Get the Type with the given column ID
-     * @param colId the column ID
-     * @return the type corresponding to the column Id, nullptr if not exists
-     */
-    virtual const Type* getTypeByColumnId(uint64_t colId) const = 0;
 
     /**
      * Create a row batch for this type.
      */
-    virtual std::unique_ptr<ColumnVectorBatch> createRowBatch(uint64_t size, MemoryPool& pool,
-                                                              bool encoded = false) const = 0;
-
-    virtual std::unique_ptr<ColumnVectorBatch> createRowBatch(uint64_t size, MemoryPool& pool,
-                                                              bool encoded,
-                                                              bool useTightNumericVector) const = 0;
+    virtual ORC_UNIQUE_PTR<ColumnVectorBatch> createRowBatch(uint64_t size, MemoryPool& pool,
+                                                             bool encoded = false) const = 0;
 
     /**
      * Add a new field to a struct type.
@@ -88,33 +79,32 @@ namespace orc {
      * @param fieldType the type of the new field
      * @return a reference to the struct type
      */
-    virtual Type* addStructField(const std::string& fieldName, std::unique_ptr<Type> fieldType) = 0;
+    virtual Type* addStructField(const std::string& fieldName, ORC_UNIQUE_PTR<Type> fieldType) = 0;
 
     /**
      * Add a new child to a union type.
      * @param fieldType the type of the new field
      * @return a reference to the union type
      */
-    virtual Type* addUnionChild(std::unique_ptr<Type> fieldType) = 0;
+    virtual Type* addUnionChild(ORC_UNIQUE_PTR<Type> fieldType) = 0;
 
     /**
      * Build a Type object from string text representation.
      */
-    static std::unique_ptr<Type> buildTypeFromString(const std::string& input);
-  };
+    static ORC_UNIQUE_PTR<Type> buildTypeFromString(const std::string& input);
+};
 
-  const int64_t DEFAULT_DECIMAL_SCALE = 18;
-  const int64_t DEFAULT_DECIMAL_PRECISION = 38;
+const int64_t DEFAULT_DECIMAL_SCALE = 18;
+const int64_t DEFAULT_DECIMAL_PRECISION = 38;
 
-  std::unique_ptr<Type> createPrimitiveType(TypeKind kind);
-  std::unique_ptr<Type> createCharType(TypeKind kind, uint64_t maxLength);
-  std::unique_ptr<Type> createDecimalType(uint64_t precision = DEFAULT_DECIMAL_PRECISION,
-                                          uint64_t scale = DEFAULT_DECIMAL_SCALE);
+ORC_UNIQUE_PTR<Type> createPrimitiveType(TypeKind kind);
+ORC_UNIQUE_PTR<Type> createCharType(TypeKind kind, uint64_t maxLength);
+ORC_UNIQUE_PTR<Type> createDecimalType(uint64_t precision = DEFAULT_DECIMAL_PRECISION,
+                                       uint64_t scale = DEFAULT_DECIMAL_SCALE);
 
-  std::unique_ptr<Type> createStructType();
-  std::unique_ptr<Type> createListType(std::unique_ptr<Type> elements);
-  std::unique_ptr<Type> createMapType(std::unique_ptr<Type> key, std::unique_ptr<Type> value);
-  std::unique_ptr<Type> createUnionType();
+ORC_UNIQUE_PTR<Type> createStructType();
+ORC_UNIQUE_PTR<Type> createListType(ORC_UNIQUE_PTR<Type> elements);
+ORC_UNIQUE_PTR<Type> createMapType(ORC_UNIQUE_PTR<Type> key, ORC_UNIQUE_PTR<Type> value);
+ORC_UNIQUE_PTR<Type> createUnionType();
 
-}  // namespace orc
-#endif
+} // namespace orc

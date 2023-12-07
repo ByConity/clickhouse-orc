@@ -16,18 +16,18 @@
  * limitations under the License.
  */
 
-#ifndef ORC_BYTE_RLE_HH
-#define ORC_BYTE_RLE_HH
+#pragma once
 
 #include <memory>
 
+#include "Utils.hh"
 #include "io/InputStream.hh"
 #include "io/OutputStream.hh"
 
 namespace orc {
 
-  class ByteRleEncoder {
-   public:
+class ByteRleEncoder {
+public:
     virtual ~ByteRleEncoder();
 
     /**
@@ -59,10 +59,10 @@ namespace orc {
      * suppress the data and reset to initial state
      */
     virtual void suppress() = 0;
-  };
+};
 
-  class ByteRleDecoder {
-   public:
+class ByteRleDecoder {
+public:
     virtual ~ByteRleDecoder();
 
     /**
@@ -83,31 +83,29 @@ namespace orc {
      *    pointer is not null, positions that are false are skipped.
      */
     virtual void next(char* data, uint64_t numValues, char* notNull) = 0;
-  };
+};
 
-  /**
+/**
    * Create a byte RLE encoder.
    * @param output the output stream to write to
    */
-  std::unique_ptr<ByteRleEncoder> createByteRleEncoder(
-      std::unique_ptr<BufferedOutputStream> output);
+std::unique_ptr<ByteRleEncoder> createByteRleEncoder(std::unique_ptr<BufferedOutputStream> output);
 
-  /**
+/**
    * Create a boolean RLE encoder.
    * @param output the output stream to write to
    */
-  std::unique_ptr<ByteRleEncoder> createBooleanRleEncoder(
-      std::unique_ptr<BufferedOutputStream> output);
+std::unique_ptr<ByteRleEncoder> createBooleanRleEncoder(std::unique_ptr<BufferedOutputStream> output);
 
-  /**
+/**
    * Create a byte RLE decoder.
    * @param input the input stream to read from
    * @param metrics the metrics of the decoder
    */
-  std::unique_ptr<ByteRleDecoder> createByteRleDecoder(std::unique_ptr<SeekableInputStream> input,
-                                                       ReaderMetrics* metrics);
+std::unique_ptr<ByteRleDecoder> createByteRleDecoder(std::unique_ptr<SeekableInputStream> input,
+                                                     ReaderMetrics* metrics);
 
-  /**
+/**
    * Create a boolean RLE decoder.
    *
    * Unlike the other RLE decoders, the boolean decoder sets the data to 0
@@ -116,8 +114,6 @@ namespace orc {
    * @param input the input stream to read from
    * @param metrics the metrics of the decoder
    */
-  std::unique_ptr<ByteRleDecoder> createBooleanRleDecoder(
-      std::unique_ptr<SeekableInputStream> input, ReaderMetrics* metrics);
-}  // namespace orc
-
-#endif
+std::unique_ptr<ByteRleDecoder> createBooleanRleDecoder(std::unique_ptr<SeekableInputStream> input,
+                                                        ReaderMetrics* metrics);
+} // namespace orc

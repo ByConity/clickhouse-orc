@@ -1,3 +1,20 @@
+// Copyright 2021-present StarRocks, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file is based on code available under the Apache license here:
+//   https://github.com/apache/orc/tree/main/c++/src/ColumnReader.hh
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,24 +33,21 @@
  * limitations under the License.
  */
 
-#ifndef ORC_COLUMN_READER_HH
-#define ORC_COLUMN_READER_HH
+#pragma once
 
 #include <unordered_map>
-
-#include "orc/Vector.hh"
 
 #include "ByteRLE.hh"
 #include "Compression.hh"
 #include "Timezone.hh"
+#include "io/InputStream.hh"
+#include "orc/Vector.hh"
 #include "wrap/orc-proto-wrapper.hh"
 
 namespace orc {
 
-  class SchemaEvolution;
-
-  class StripeStreams {
-   public:
+class StripeStreams {
+public:
     virtual ~StripeStreams();
 
     /**
@@ -41,7 +55,8 @@ namespace orc {
      * @return the address of an array which contains true at the index of
      *    each columnId is selected.
      */
-    virtual const std::vector<bool> getSelectedColumns() const = 0;
+    virtual const std::vector<bool>& getSelectedColumns() const = 0;
+    virtual const std::vector<bool>& getLazyLoadColumns() const = 0;
 
     /**
      * Get the encoding for the given column for this stripe.
@@ -55,8 +70,7 @@ namespace orc {
      * @param shouldStream should the reading page the stream in
      * @return the new stream
      */
-    virtual std::unique_ptr<SeekableInputStream> getStream(uint64_t columnId,
-                                                           proto::Stream_Kind kind,
+    virtual std::unique_ptr<SeekableInputStream> getStream(uint64_t columnId, proto::Stream_Kind kind,
                                                            bool shouldStream) const = 0;
 
     /**
@@ -104,23 +118,22 @@ namespace orc {
      */
     virtual bool isDecimalAsLong() const = 0;
 
-    /**
-     * @return get schema evolution utility object
-     */
-    virtual const SchemaEvolution* getSchemaEvolution() const = 0;
-  };
+    virtual bool getUseWriterTimezone() const { return false; }
 
-  /**
+    virtual DataBuffer<char>* getSharedBuffer() const { return nullptr; }
+};
+
+/**
    * The interface for reading ORC data types.
    */
-  class ColumnReader {
-   protected:
+class ColumnReader {
+protected:
     std::unique_ptr<ByteRleDecoder> notNullDecoder;
     uint64_t columnId;
     MemoryPool& memoryPool;
     ReaderMetrics* metrics;
 
-   public:
+public:
     ColumnReader(const Type& type, StripeStreams& stipe);
 
     virtual ~ColumnReader();
@@ -151,24 +164,38 @@ namespace orc {
      *           set.
      */
     virtual void nextEncoded(ColumnVectorBatch& rowBatch, uint64_t numValues, char* notNull) {
-      rowBatch.isEncoded = false;
-      next(rowBatch, numValues, notNull);
+        rowBatch.isEncoded = false;
+        next(rowBatch, numValues, notNull);
     }
 
     /**
      * Seek to beginning of a row group in the current stripe
      * @param positions a list of PositionProviders storing the positions
      */
-    virtual void seekToRowGroup(std::unordered_map<uint64_t, PositionProvider>& positions);
-  };
+    virtual void seekToRowGroup(PositionProviderMap* providers);
 
-  /**
+    uint64_t getColumnId() { return columnId; }
+
+    // Functions for lazy load fields.
+    virtual void lazyLoadSkip(uint64_t numValues) { skip(numValues); }
+
+    virtual void lazyLoadNext(ColumnVectorBatch& rowBatch, uint64_t numValues, char* notNull) {
+        next(rowBatch, numValues, notNull);
+    }
+
+    virtual void lazyLoadNextEncoded(ColumnVectorBatch& rowBatch, uint64_t numValues, char* notNull) {
+        rowBatch.isEncoded = false;
+        lazyLoadNext(rowBatch, numValues, notNull);
+    }
+
+    virtual void lazyLoadSeekToRowGroup(PositionProviderMap* providers) { seekToRowGroup(providers); }
+};
+
+/**
    * Create a reader for the given stripe.
    */
-  std::unique_ptr<ColumnReader> buildReader(const Type& type, StripeStreams& stripe,
-                                            bool useTightNumericVector = false,
-                                            bool throwOnSchemaEvolutionOverflow = false,
-                                            bool convertToReadType = true);
-}  // namespace orc
+std::unique_ptr<ColumnReader> buildReader(const Type& type, StripeStreams& stripe);
 
-#endif
+// collect string dictionary from column reader
+void collectStringDictionary(ColumnReader* reader, std::unordered_map<uint64_t, StringDictionary*>& coll);
+} // namespace orc

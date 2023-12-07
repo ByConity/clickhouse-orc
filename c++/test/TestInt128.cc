@@ -16,16 +16,15 @@
  * limitations under the License.
  */
 
-#include "orc/Int128.hh"
+#include <iostream>
 
 #include "OrcTest.hh"
+#include "orc/Int128.hh"
 #include "wrap/gtest-wrapper.h"
-
-#include <iostream>
 
 namespace orc {
 
-  TEST(Int128, simpleTest) {
+TEST(Int128, simpleTest) {
     Int128 x = 12;
     Int128 y = 13;
     x += y;
@@ -43,9 +42,9 @@ namespace orc {
     EXPECT_EQ(static_cast<uint64_t>(-8), y.getLowBits());
     Int128 z;
     EXPECT_EQ(0, z.toLong());
-  }
+}
 
-  TEST(Int128, testNegate) {
+TEST(Int128, testNegate) {
     Int128 n = -1000000000000;
     EXPECT_EQ("0xffffffffffffffffffffff172b5af000", n.toHexString());
     n.negate();
@@ -71,9 +70,9 @@ namespace orc {
     EXPECT_EQ("0xffffffffedcba987ffffffff6543210f", big.toHexString());
     big.invert();
     EXPECT_EQ("0x0000000012345678000000009abcdef0", big.toHexString());
-  }
+}
 
-  TEST(Int128, testPlus) {
+TEST(Int128, testPlus) {
     Int128 n(0x1000, 0xfffffffffffffff0);
     EXPECT_EQ("0x0000000000001000fffffffffffffff0", n.toHexString());
     n += 0x20;
@@ -93,18 +92,18 @@ namespace orc {
     EXPECT_EQ("0xffffffffffffff000000000000000200", x.toHexString());
     x -= Int128(1, 2);
     EXPECT_EQ("0xfffffffffffffeff00000000000001fe", x.toHexString());
-  }
+}
 
-  TEST(Int128, testLogic) {
+TEST(Int128, testLogic) {
     Int128 n = Int128(0x00000000100000002, 0x0000000400000008);
     n |= Int128(0x0000001000000020, 0x0000004000000080);
     EXPECT_EQ("0x00000011000000220000004400000088", n.toHexString());
     n = Int128(0x0000111100002222, 0x0000333300004444);
     n &= Int128(0x0000f00000000f00, 0x000000f00000000f);
     EXPECT_EQ("0x00001000000002000000003000000004", n.toHexString());
-  }
+}
 
-  TEST(Int128, testShift) {
+TEST(Int128, testShift) {
     Int128 n(0x123456789abcdef0, 0xfedcba9876543210);
     EXPECT_EQ("0x123456789abcdef0fedcba9876543210", n.toHexString());
     n <<= 0;
@@ -155,9 +154,9 @@ namespace orc {
     n = Int128(-0x100, 0xffffffffffffffff);
     n >>= 68;
     EXPECT_EQ("0xfffffffffffffffffffffffffffffff0", n.toHexString());
-  }
+}
 
-  TEST(Int128, testCompare) {
+TEST(Int128, testCompare) {
     Int128 x = 123;
     EXPECT_EQ(Int128(123), x);
     EXPECT_EQ(true, x == 123);
@@ -200,9 +199,9 @@ namespace orc {
     EXPECT_EQ(true, Int128::minimumValue() < 0);
     EXPECT_EQ(true, Int128(0) < Int128::maximumValue());
     EXPECT_EQ(true, Int128::minimumValue() < Int128::maximumValue());
-  }
+}
 
-  TEST(Int128, testHash) {
+TEST(Int128, testHash) {
     EXPECT_EQ(0, Int128().hash());
     EXPECT_EQ(0x123, Int128(0x123).hash());
     EXPECT_EQ(0xc3c3c3c3, Int128(0x0101010102020202, 0x4040404080808080).hash());
@@ -211,9 +210,9 @@ namespace orc {
     EXPECT_EQ(0x12345678, Int128(0x12345678, 0x0).hash());
     EXPECT_EQ(0x12345678, Int128(0x0, 0x1234567800000000).hash());
     EXPECT_EQ(0x12345678, Int128(0x0, 0x12345678).hash());
-  }
+}
 
-  TEST(Int128, testFitsInLong) {
+TEST(Int128, testFitsInLong) {
     EXPECT_EQ(true, Int128(0x0, 0x7fffffffffffffff).fitsInLong());
     EXPECT_EQ(true, !Int128(0x0, 0x8000000000000000).fitsInLong());
     EXPECT_EQ(true, !Int128(-1, 0x7fffffffffffffff).fitsInLong());
@@ -226,9 +225,9 @@ namespace orc {
     EXPECT_EQ(0x7fffffffffffffff, Int128(0x0, 0x7fffffffffffffff).toLong());
     EXPECT_THROW(Int128(1, 1).toLong(), std::runtime_error);
     EXPECT_EQ(0x8000000000000000, Int128(-1, 0x8000000000000000).toLong());
-  }
+}
 
-  TEST(Int128, testMultiply) {
+TEST(Int128, testMultiply) {
     Int128 x = 2;
     x *= 3;
     EXPECT_EQ(6, x.toLong());
@@ -246,9 +245,9 @@ namespace orc {
     x = Int128(0x0534AB4C, 0x59D109ADF9892FCA);
     x *= Int128(0, 0x9033b8c7a);
     EXPECT_EQ("0x2eead9afd0c6e0e929c18da753113e44", x.toHexString());
-  }
+}
 
-  TEST(Int128, testMultiplyInt) {
+TEST(Int128, testMultiplyInt) {
     Int128 x = 2;
     x *= 1;
     EXPECT_EQ(2, x.toLong());
@@ -270,9 +269,9 @@ namespace orc {
     EXPECT_EQ("0x80000000000000000000000000000000", x.toHexString());
     x *= 2;
     EXPECT_EQ("0x00000000000000000000000000000000", x.toHexString());
-  }
+}
 
-  TEST(Int128, testFillInArray) {
+TEST(Int128, testFillInArray) {
     Int128 x(0x123456789abcdef0, 0x23456789abcdef01);
     uint32_t array[4];
     bool wasNegative;
@@ -314,11 +313,11 @@ namespace orc {
     EXPECT_EQ(0x80000000, array[0]);
     EXPECT_EQ(0x12345678, array[1]);
     EXPECT_EQ(0x9abcdef0, array[2]);
-  }
+}
 
-  int64_t fls(uint32_t x);
+int64_t fls(uint32_t x);
 
-  TEST(Int128, testFindLastSet) {
+TEST(Int128, testFindLastSet) {
     EXPECT_EQ(0, fls(0));
     EXPECT_EQ(1, fls(1));
     EXPECT_EQ(8, fls(0xff));
@@ -326,11 +325,11 @@ namespace orc {
     EXPECT_EQ(29, fls(0x12345678));
     EXPECT_EQ(31, fls(0x40000000));
     EXPECT_EQ(32, fls(0x80000000));
-  }
+}
 
-  void shiftArrayLeft(uint32_t* array, int64_t length, int64_t bits);
+void shiftArrayLeft(uint32_t* array, int64_t length, int64_t bits);
 
-  TEST(Int128, testShiftArrayLeft) {
+TEST(Int128, testShiftArrayLeft) {
     uint32_t array[5];
     // make sure nothing blows up
     array[0] = 0x12345678;
@@ -368,11 +367,11 @@ namespace orc {
     EXPECT_EQ(0xbcdefffe, array[2]);
     EXPECT_EQ(0xdcba9876, array[3]);
     EXPECT_EQ(0x54321000, array[4]);
-  }
+}
 
-  void shiftArrayRight(uint32_t* array, int64_t length, int64_t bits);
+void shiftArrayRight(uint32_t* array, int64_t length, int64_t bits);
 
-  TEST(Int128, testShiftArrayRight) {
+TEST(Int128, testShiftArrayRight) {
     uint32_t array[4];
     // make sure nothing blows up
     array[0] = 0x12345678;
@@ -394,12 +393,11 @@ namespace orc {
     EXPECT_EQ(0x89abcdef, array[1]);
     EXPECT_EQ(0xffedcba9, array[2]);
     EXPECT_EQ(0x87654321, array[3]);
-  }
+}
 
-  void fixDivisionSigns(Int128& result, Int128& remainder, bool dividendWasNegative,
-                        bool divisorWasNegative);
+void fixDivisionSigns(Int128& result, Int128& remainder, bool dividendWasNegative, bool divisorWasNegative);
 
-  TEST(Int128, testFixDivisionSigns) {
+TEST(Int128, testFixDivisionSigns) {
     Int128 x = 123;
     Int128 y = 456;
     fixDivisionSigns(x, y, false, false);
@@ -423,11 +421,11 @@ namespace orc {
     fixDivisionSigns(x, y, true, true);
     EXPECT_EQ(123, x.toLong());
     EXPECT_EQ(-456, y.toLong());
-  }
+}
 
-  void buildFromArray(Int128& value, uint32_t* array, int64_t length);
+void buildFromArray(Int128& value, uint32_t* array, int64_t length);
 
-  TEST(Int128, testBuildFromArray) {
+TEST(Int128, testBuildFromArray) {
     Int128 result;
     uint32_t array[5] = {0x12345678, 0x9abcdef0, 0xfedcba98, 0x76543210, 0};
 
@@ -447,12 +445,12 @@ namespace orc {
     EXPECT_EQ("0x123456789abcdef0fedcba9876543210", result.toHexString());
 
     EXPECT_THROW(buildFromArray(result, array, 5), std::logic_error);
-  }
+}
 
-  Int128 singleDivide(uint32_t* dividend, int64_t dividendLength, uint32_t divisor,
-                      Int128& remainder, bool dividendWasNegative, bool divisorWasNegative);
+Int128 singleDivide(uint32_t* dividend, int64_t dividendLength, uint32_t divisor, Int128& remainder,
+                    bool dividendWasNegative, bool divisorWasNegative);
 
-  TEST(Int128, testSingleDivide) {
+TEST(Int128, testSingleDivide) {
     Int128 remainder;
     uint32_t dividend[4];
 
@@ -484,9 +482,9 @@ namespace orc {
     result = singleDivide(dividend, 4, 123, remainder, false, false);
     EXPECT_EQ("0x0025e390971c97aaaaa84c7077bc23ed", result.toHexString());
     EXPECT_EQ(0x42, remainder.toLong());
-  }
+}
 
-  TEST(Int128, testDivide) {
+TEST(Int128, testDivide) {
     Int128 dividend;
     Int128 result;
     Int128 remainder;
@@ -527,9 +525,9 @@ namespace orc {
     result = dividend.divide(Int128(0, 0x400000007fffffff), remainder);
     EXPECT_EQ("0x0000000000000000fffffffe00000007", result.toHexString());
     EXPECT_EQ("0x00000000000000003ffffffa80000007", remainder.toHexString());
-  }
+}
 
-  TEST(Int128, testToString) {
+TEST(Int128, testToString) {
     Int128 num = Int128(0x123456789abcdef0, 0xfedcba0987654321);
     EXPECT_EQ("24197857203266734881846307133640229665", num.toString());
 
@@ -555,9 +553,9 @@ namespace orc {
 
     num = Int128("-12345678901122334455667788990011122233");
     EXPECT_EQ("-12345678901122334455667788990011122233", num.toString());
-  }
+}
 
-  TEST(Int128, testToDecimalString) {
+TEST(Int128, testToDecimalString) {
     Int128 num = Int128("98765432109876543210987654321098765432");
     EXPECT_EQ("98765432109876543210987654321098765432", num.toDecimalString(0));
     EXPECT_EQ("987654321098765432109876543210987.65432", num.toDecimalString(5));
@@ -576,9 +574,9 @@ namespace orc {
     EXPECT_EQ("-0.123", num.toDecimalString(3));
     EXPECT_EQ("-0.0123", num.toDecimalString(4));
     EXPECT_EQ("-0.00123", num.toDecimalString(5));
-  }
+}
 
-  TEST(Int128, testInt128Scale) {
+TEST(Int128, testInt128Scale) {
     Int128 num = Int128(10);
     bool overflow = false;
 
@@ -615,9 +613,9 @@ namespace orc {
 
     num = scaleDownInt128ByPowerOfTen(Int128(10000), 5);
     EXPECT_EQ(Int128(0), num);
-  }
+}
 
-  TEST(Int128, testToDecimalStringTrimTrailingZeros) {
+TEST(Int128, testToDecimalStringTrimTrailingZeros) {
     EXPECT_TRUE(Int128(0).toDecimalString(0, false) == "0");
     EXPECT_TRUE(Int128(0).toDecimalString(0, true) == "0");
 
@@ -641,564 +639,6 @@ namespace orc {
 
     EXPECT_TRUE(Int128(-12340000).toDecimalString(8, false) == "-0.12340000");
     EXPECT_TRUE(Int128(-12340000).toDecimalString(8, true) == "-0.1234");
-  }
+}
 
-  TEST(Int128, testConvertDecimalToDifferentPrecisionScale) {
-    // Test convert decimal to different precision/scale
-    Int128 num = Int128(1234567890);
-
-    int fromScale = 5;
-    int toPrecision = 9;
-    int toScale = 5;
-    auto pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true) << pair.second.toString();  // overflow
-
-    fromScale = 5;
-    toPrecision = 9;
-    toScale = 4;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(123456789));
-
-    fromScale = 5;
-    toPrecision = 9;
-    toScale = 3;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345679)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 10;
-    toScale = 0;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12346));
-
-    fromScale = 5;
-    toPrecision = 10;
-    toScale = 2;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(1234568)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 10;
-    toScale = 5;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(1234567890)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 10;
-    toScale = 6;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);
-
-    fromScale = 5;
-    toPrecision = 11;
-    toScale = 0;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12346));
-
-    fromScale = 5;
-    toPrecision = 11;
-    toScale = 3;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345679)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 11;
-    toScale = 6;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345678900)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 11;
-    toScale = 7;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromScale = 5;
-    toPrecision = 12;
-    toScale = 5;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(1234567890)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 12;
-    toScale = 6;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345678900)) << pair.second.toString();
-
-    fromScale = 5;
-    toPrecision = 12;
-    toScale = 8;
-    pair = convertDecimal(num, fromScale, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromScale = 5;
-    toPrecision = 39;
-    toScale = 5;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-
-    fromScale = 5;
-    toPrecision = 0;
-    toScale = 5;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-
-    fromScale = 39;
-    toPrecision = 9;
-    toScale = -1;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-
-    fromScale = 0;
-    toPrecision = 9;
-    toScale = 10;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-
-    fromScale = -1;
-    toPrecision = 9;
-    toScale = 0;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-
-    fromScale = 40;
-    toPrecision = 9;
-    toScale = 0;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-
-    fromScale = -40;
-    toPrecision = 9;
-    toScale = 0;
-    EXPECT_THROW(convertDecimal(num, fromScale, toPrecision, toScale), std::invalid_argument);
-  }
-
-  TEST(Int128, testConvertDecimaFromDouble) {
-    double fromDouble = 12345.13579;
-    int toPrecision = 4;
-    int toScale = 2;
-    auto pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    toPrecision = 5;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345)) << pair.second.toString();
-
-    toPrecision = 5;
-    toScale = 1;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    toPrecision = 6;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345)) << pair.second.toString();
-
-    toPrecision = 6;
-    toScale = 1;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(123451)) << pair.second.toString();
-
-    toPrecision = 6;
-    toScale = 2;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    toPrecision = 8;
-    toScale = 3;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(12345136)) << pair.second.toString();
-
-    fromDouble = -12345.13579;
-
-    toPrecision = 4;
-    toScale = 2;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    toPrecision = 5;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(-12345)) << pair.second.toString();
-
-    toPrecision = 5;
-    toScale = 1;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    toPrecision = 6;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(-12345)) << pair.second.toString();
-
-    toPrecision = 6;
-    toScale = 1;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(-123451)) << pair.second.toString();
-
-    toPrecision = 6;
-    toScale = 2;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    toPrecision = 8;
-    toScale = 3;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second, Int128(-12345136)) << pair.second.toString();
-
-    fromDouble = pow(10, 37);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), std::to_string(fromDouble).substr(0, 37))
-        << pair.second.toString();
-
-    fromDouble = -pow(10, 37);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), std::to_string(fromDouble).substr(0, 38))
-        << pair.second.toString();
-
-    fromDouble = -std::ldexp(1.0, 126);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), std::to_string(fromDouble).substr(0, 39))
-        << pair.second.toString();
-
-    fromDouble = -std::ldexp(1.0, 127);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = -std::ldexp(1.0, 127);
-    toPrecision = 39;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = std::ldexp(1.0, 127);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = std::ldexp(1.0, 127);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = std::ldexp(1.0, 126);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), std::to_string(fromDouble).substr(0, 38))
-        << pair.second.toString();
-
-    fromDouble = 9988776655443322880.0;
-    toPrecision = 38;
-    toScale = 6;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "9988776655443322880000000") << pair.second.toString();
-
-    toScale = 10;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "99887766554433228800000000000") << pair.second.toString();
-
-    fromDouble = -9988776655443322880.0;
-    toPrecision = 38;
-    toScale = 6;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "-9988776655443322880000000") << pair.second.toString();
-
-    // 1e19
-    fromDouble = 1e19 + 0.5;
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), std::to_string(fromDouble).substr(0, 20))
-        << pair.second.toString();
-
-    toPrecision = 38;
-    toScale = 3;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "10000000000000000000000") << pair.second.toString();
-
-    // small than 1<<127 but overflow
-    fromDouble = 1.5e38;
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    // -2^55
-    fromDouble = -std::ldexp(1.0, 55) + 0.5;
-    toScale = 3;
-    toPrecision = 38;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "-36028797018963968000") << pair.second.toString();
-
-    // -2^50 - 0.5
-    fromDouble = -std::ldexp(1.0, 50) - 0.5;
-    toScale = 3;
-    toPrecision = 38;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "-1125899906842624500") << pair.second.toString();
-
-    fromDouble = std::nan("1");
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = std::numeric_limits<double>::infinity();
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = -std::numeric_limits<double>::infinity();
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = +0.0;
-    toPrecision = 38;
-    toScale = 5;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "0") << pair.second.toString();
-
-    fromDouble = -0.0;
-    toPrecision = 38;
-    toScale = 5;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "0") << pair.second.toString();
-
-    fromDouble = 998244353.998244;
-    toPrecision = 15;
-    toScale = 6;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "998244353998244")
-        << pair.second.toString();
-
-    toScale = 5;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "99824435399824")
-        << pair.second.toString();
-
-    toScale = 2;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "99824435400")
-        << pair.second.toString();
-
-    toScale = 1;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "9982443540")
-        << pair.second.toString();
-
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "998244354")
-        << pair.second.toString();
-
-    toPrecision = 14;
-    toScale = 6;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromDouble = -998244353.998244;
-    toPrecision = 15;
-    toScale = 6;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(),
-              "-998244353998244")
-        << pair.second.toString();
-
-    toScale = 2;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "-99824435400")
-        << pair.second.toString();
-
-    toScale = 1;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "-9982443540")
-        << pair.second.toString();
-
-    toScale = 0;
-    pair = convertDecimal(fromDouble, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromDouble, toPrecision, toScale).second.toString(), "-998244354")
-        << pair.second.toString();
-  }
-
-  // Test float to decimal conversion like double to decimal conversion.
-  TEST(Int128, testConvertDecimalFromFloat) {
-    std::pair<bool, Int128> pair;
-    float fromFloat;
-    int32_t toPrecision;
-    int32_t toScale;
-
-    fromFloat = +0.0;
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "0") << pair.second.toString();
-
-    fromFloat = -0.0;
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "0") << pair.second.toString();
-
-    fromFloat = std::numeric_limits<float>::infinity();
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromFloat = -std::numeric_limits<float>::infinity();
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    fromFloat = std::nanf("1");
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    // 2^126
-    fromFloat = std::ldexp(1.0f, 126);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "85070591730234615865843651857942052864")
-        << pair.second.toString();
-
-    // 2^127
-    fromFloat = std::ldexp(1.0f, 127);
-    toPrecision = 38;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, true);  // overflow
-
-    // 2^70 + 2^69
-    fromFloat = std::ldexp(1.0f, 70) + std::ldexp(1.0f, 69);
-    toPrecision = 38;
-    toScale = 3;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "1770887431076116955136000") << pair.second.toString();
-
-    fromFloat = std::ldexp(1.0f, 70) + std::ldexp(1.0f, 60);
-    toPrecision = 38;
-    toScale = 3;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "1181744542222018150400000") << pair.second.toString();
-
-    fromFloat = -(std::ldexp(1.0f, 70) + std::ldexp(1.0f, 50));
-    toPrecision = 38;
-    toScale = 3;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "-1180592746617318146048000") << pair.second.toString();
-
-    fromFloat = std::ldexp(1.0f, 70) - std::ldexp(1.0f, 60);
-    toPrecision = 38;
-    toScale = 3;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(pair.second.toString(), "1179438699212804456448000") << pair.second.toString();
-
-    fromFloat = 9.998244f;
-    toPrecision = 15;
-    toScale = 6;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "9998244")
-        << pair.second.toString();
-
-    toScale = 2;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "1000")
-        << pair.second.toString();
-
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "10")
-        << pair.second.toString();
-
-    fromFloat = -9.998244f;
-    toPrecision = 15;
-    toScale = 6;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "-9998244")
-        << pair.second.toString();
-
-    toScale = 2;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "-1000")
-        << pair.second.toString();
-
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "-10")
-        << pair.second.toString();
-
-    toPrecision = 1;
-    toScale = 0;
-    pair = convertDecimal(fromFloat, toPrecision, toScale);
-    EXPECT_EQ(pair.first, false);  // no overflow
-    EXPECT_EQ(convertDecimal(fromFloat, toPrecision, toScale).second.toString(), "-10")
-        << pair.second.toString();
-  }
-
-}  // namespace orc
+} // namespace orc

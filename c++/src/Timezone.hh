@@ -16,46 +16,45 @@
  * limitations under the License.
  */
 
-#ifndef TIMEZONE_HH
-#define TIMEZONE_HH
+#pragma once
 
 // This file is for timezone routines.
 
-#include "Adaptor.hh"
-
-#include <stdint.h>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "Adaptor.hh"
+
 namespace orc {
 
-  static const int64_t SECONDS_PER_HOUR = 60 * 60;
-  static const int64_t SECONDS_PER_DAY = SECONDS_PER_HOUR * 24;
+static const int64_t SECONDS_PER_HOUR = 60 * 60;
+static const int64_t SECONDS_PER_DAY = SECONDS_PER_HOUR * 24;
 
-  /**
+/**
    * A variant  (eg. PST or PDT) of a timezone (eg. America/Los_Angeles).
    */
-  struct TimezoneVariant {
+struct TimezoneVariant {
     int64_t gmtOffset;
     bool isDst;
     std::string name;
 
     bool hasSameTzRule(const TimezoneVariant& other) const {
-      return gmtOffset == other.gmtOffset && isDst == other.isDst;
+        return gmtOffset == other.gmtOffset && isDst == other.isDst;
     }
 
     std::string toString() const;
-  };
+};
 
-  /**
+/**
    * A region that shares the same legal rules for wall clock time and
    * day light savings transitions. They are typically named for the largest
    * city in the region (eg. America/Los_Angeles or America/Mexico_City).
    */
-  class Timezone {
-   public:
+class Timezone {
+public:
     virtual ~Timezone();
 
     /**
@@ -85,55 +84,47 @@ namespace orc {
      * Convert wall clock time of current timezone to UTC timezone
      */
     virtual int64_t convertToUTC(int64_t clk) const = 0;
+};
 
-    /**
-     * Convert UTC timezone to wall clock time of current timezone
-     */
-    virtual int64_t convertFromUTC(int64_t clk) const = 0;
-  };
-
-  /**
+/**
    * Get the local timezone.
    * Results are cached.
    */
-  const Timezone& getLocalTimezone();
+const Timezone& getLocalTimezone();
 
-  /**
+/**
    * Get a timezone by name (eg. America/Los_Angeles).
    * Results are cached.
    */
-  const Timezone& getTimezoneByName(const std::string& zone);
+const Timezone& getTimezoneByName(const std::string& zone);
 
-  /**
+/**
    * Parse a set of bytes as a timezone file as if they came from filename.
    */
-  std::unique_ptr<Timezone> getTimezone(const std::string& filename,
-                                        const std::vector<unsigned char>& b);
+std::unique_ptr<Timezone> getTimezone(const std::string& filename, const std::vector<unsigned char>& b);
 
-  class TimezoneError : public std::runtime_error {
-   public:
-    explicit TimezoneError(const std::string& what);
-    explicit TimezoneError(const TimezoneError&);
-    ~TimezoneError() noexcept override;
-  };
+class TimezoneError : public std::runtime_error {
+public:
+    TimezoneError(const std::string& what);
+    TimezoneError(const TimezoneError&);
+    ~TimezoneError() ORC_NOEXCEPT override;
+};
 
-  /**
+/**
    * Represents the parsed POSIX timezone rule strings that are used to
    * describe the future transitions, because they can go arbitrarily far into
    * the future.
    */
-  class FutureRule {
-   public:
+class FutureRule {
+public:
     virtual ~FutureRule();
     virtual bool isDefined() const = 0;
     virtual const TimezoneVariant& getVariant(int64_t clk) const = 0;
     virtual void print(std::ostream& out) const = 0;
-  };
+};
 
-  /**
+/**
    * Parse the POSIX TZ string.
    */
-  std::shared_ptr<FutureRule> parseFutureRule(const std::string& ruleString);
-}  // namespace orc
-
-#endif
+std::shared_ptr<FutureRule> parseFutureRule(const std::string& ruleString);
+} // namespace orc

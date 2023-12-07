@@ -16,35 +16,34 @@
  * limitations under the License.
  */
 
-#ifndef TYPE_IMPL_HH
-#define TYPE_IMPL_HH
-
-#include "orc/Type.hh"
-
-#include "Adaptor.hh"
-#include "wrap/orc-proto-wrapper.hh"
+#pragma once
 
 #include <vector>
 
+#include "Adaptor.hh"
+#include "orc/Type.hh"
+#include "wrap/orc-proto-wrapper.hh"
+
 namespace orc {
 
-  class TypeImpl : public Type {
-   private:
+class TypeImpl : public Type {
+private:
     TypeImpl* parent;
     mutable int64_t columnId;
     mutable int64_t maximumColumnId;
     TypeKind kind;
     std::vector<std::unique_ptr<Type>> subTypes;
     std::vector<std::string> fieldNames;
+    mutable std::map<uint64_t, uint64_t> columnIdToPos;
     uint64_t subtypeCount;
     uint64_t maxLength;
     uint64_t precision;
     uint64_t scale;
     std::map<std::string, std::string> attributes;
 
-   public:
+public:
     /**
-     * Create most of the primitive types.
+     * Create most of the logical types.
      */
     TypeImpl(TypeKind kind);
 
@@ -68,7 +67,11 @@ namespace orc {
 
     const Type* getSubtype(uint64_t i) const override;
 
+    const Type* getSubtypeByColumnId(uint64_t columnId) const override;
+
     const std::string& getFieldName(uint64_t i) const override;
+
+    uint64_t getFieldNamesCount() const override;
 
     uint64_t getMaximumLength() const override;
 
@@ -88,16 +91,11 @@ namespace orc {
 
     std::string toString() const override;
 
-    const Type* getTypeByColumnId(uint64_t colIdx) const override;
     Type* addStructField(const std::string& fieldName, std::unique_ptr<Type> fieldType) override;
     Type* addUnionChild(std::unique_ptr<Type> fieldType) override;
 
     std::unique_ptr<ColumnVectorBatch> createRowBatch(uint64_t size, MemoryPool& memoryPool,
                                                       bool encoded = false) const override;
-
-    std::unique_ptr<ColumnVectorBatch> createRowBatch(
-        uint64_t size, MemoryPool& memoryPool, bool encoded = false,
-        bool useTightNumericVector = false) const override;
 
     /**
      * Explicitly set the column ids. Only for internal usage.
@@ -109,10 +107,9 @@ namespace orc {
      */
     void addChildType(std::unique_ptr<Type> childType);
 
-    static std::pair<std::unique_ptr<Type>, size_t> parseType(const std::string& input,
-                                                              size_t start, size_t end);
+    static std::pair<ORC_UNIQUE_PTR<Type>, size_t> parseType(const std::string& input, size_t start, size_t end);
 
-   private:
+private:
     /**
      * Assign ids to this node and its children giving this
      * node rootId.
@@ -124,6 +121,11 @@ namespace orc {
      * Ensure that ids are assigned to all of the nodes.
      */
     void ensureIdAssigned() const;
+
+    /**
+     * Build column id mapping to position in children.
+     */
+    void buildColumnIdToPosMap() const;
 
     /**
      * Parse array type from string
@@ -142,22 +144,12 @@ namespace orc {
     static std::unique_ptr<Type> parseMapType(const std::string& input, size_t start, size_t end);
 
     /**
-     * Parse field name from string
-     * @param input the input string of a field name
-     * @param start start position of the input string
-     * @param end end position of the input string
-     */
-    static std::pair<std::string, size_t> parseName(const std::string& input, const size_t start,
-                                                    const size_t end);
-
-    /**
      * Parse struct type from string
      * @param input the input string of a struct type
      * @param start start position of the input string
      * @param end end position of the input string
      */
-    static std::unique_ptr<Type> parseStructType(const std::string& input, size_t start,
-                                                 size_t end);
+    static std::unique_ptr<Type> parseStructType(const std::string& input, size_t start, size_t end);
 
     /**
      * Parse union type from string
@@ -168,13 +160,20 @@ namespace orc {
     static std::unique_ptr<Type> parseUnionType(const std::string& input, size_t start, size_t end);
 
     /**
+     * Parse field name from string
+     * @param input the input string of a field name
+     * @param start start position of the input string
+     * @param end end position of the input string
+     */
+    static std::pair<std::string, size_t> parseName(const std::string& input, const size_t start, const size_t end);
+
+    /**
      * Parse decimal type from string
      * @param input the input string of a decimal type
      * @param start start position of the input string
      * @param end end position of the input string
      */
-    static std::unique_ptr<Type> parseDecimalType(const std::string& input, size_t start,
-                                                  size_t end);
+    static std::unique_ptr<Type> parseDecimalType(const std::string& input, size_t start, size_t end);
 
     /**
      * Parse type for a category
@@ -183,13 +182,13 @@ namespace orc {
      * @param start start position of the input string
      * @param end end position of the input string
      */
-    static std::unique_ptr<Type> parseCategory(std::string category, const std::string& input,
-                                               size_t start, size_t end);
-  };
+    static std::unique_ptr<Type> parseCategory(const std::string& category, const std::string& input, size_t start,
+                                               size_t end);
+};
 
-  std::unique_ptr<Type> convertType(const proto::Type& type, const proto::Footer& footer);
+std::unique_ptr<Type> convertType(const proto::Type& type, const proto::Footer& footer);
 
-  /**
+/**
    * Build a clone of the file type, projecting columns from the selected
    * vector. This routine assumes that the parent of any selected column
    * is also selected.
@@ -197,7 +196,5 @@ namespace orc {
    * @param selected is each column by id selected
    * @return a clone of the fileType filtered by the selection array
    */
-  std::unique_ptr<Type> buildSelectedType(const Type* fileType, const std::vector<bool>& selected);
-}  // namespace orc
-
-#endif
+std::unique_ptr<Type> buildSelectedType(const Type* fileType, const std::vector<bool>& selected);
+} // namespace orc
