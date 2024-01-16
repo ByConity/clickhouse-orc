@@ -778,6 +778,9 @@ void StringDictionaryColumnReader::next(ColumnVectorBatch& rowBatch, uint64_t nu
     if (byteBatch.codes.capacity() < numValues) {
         byteBatch.codes.reserve(numValues);
     }
+
+    byteBatch.dictionary = this->dictionary;
+
     int64_t* codes = byteBatch.codes.data();
     if (notNull) {
         for (uint64_t i = 0; i < numValues; ++i) {

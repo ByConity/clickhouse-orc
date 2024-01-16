@@ -137,26 +137,6 @@ struct DoubleVectorBatch : public ColumnVectorBatch {
     void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
 };
 
-struct StringVectorBatch : public ColumnVectorBatch {
-    StringVectorBatch(uint64_t capacity, MemoryPool& pool);
-    ~StringVectorBatch() override;
-    std::string toString() const override;
-    void resize(uint64_t capacity) override;
-    void clear() override;
-    uint64_t getMemoryUsage() override;
-
-    // pointers to the start of each string
-    DataBuffer<char*> data;
-    // the length of each string
-    DataBuffer<int64_t> length;
-    // string blob
-    DataBuffer<char> blob;
-    // dict codes, iff. there is dictionary.
-    DataBuffer<int64_t> codes;
-    bool use_codes;
-    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
-};
-
 struct StringDictionary {
     StringDictionary(MemoryPool& pool);
     DataBuffer<char> dictionaryBlob;
@@ -175,6 +155,29 @@ struct StringDictionary {
         length = offsetPtr[index + 1] - offsetPtr[index];
     }
 };
+
+struct StringVectorBatch : public ColumnVectorBatch {
+    StringVectorBatch(uint64_t capacity, MemoryPool& pool);
+    ~StringVectorBatch() override;
+    std::string toString() const override;
+    void resize(uint64_t capacity) override;
+    void clear() override;
+    uint64_t getMemoryUsage() override;
+
+    // pointers to the start of each string
+    DataBuffer<char*> data;
+    // the length of each string
+    DataBuffer<int64_t> length;
+    // string blob
+    DataBuffer<char> blob;
+    // dict codes, iff. there is dictionary.
+    DataBuffer<int64_t> codes;
+    bool use_codes;
+    std::shared_ptr<StringDictionary> dictionary;
+    void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
+};
+
+
 
 /**
    * Include a index array with reference to corresponding dictionary.

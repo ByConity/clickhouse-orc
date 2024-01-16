@@ -76,9 +76,9 @@ public:
 
     const T* data() const { return buf; }
 
-    uint64_t size() { return currentSize; }
+    uint64_t size() const  { return currentSize; }
 
-    uint64_t capacity() { return currentCapacity; }
+    uint64_t capacity() const { return currentCapacity; }
 
     T& operator[](uint64_t i) { return buf[i]; }
     const T& operator[](uint64_t i) const { return buf[i]; }
