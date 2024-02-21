@@ -39,7 +39,9 @@
 #include <cstring>
 
 #include "orc/Int128.hh"
-
+#ifndef __AVX2__
+#define __AVX2__
+#endif
 namespace orc {
 
 MemoryPool::~MemoryPool() {
@@ -133,7 +135,7 @@ inline int CountTrailingZerosNonZero32(uint32_t n) {
 #endif
 #endif
 
-// it's copied from `filter_range` in column_helper.h with some minor changes.
+// FROM starrocks: it's copied from `filter_range` in column_helper.h with some minor changes.
 template <class T>
 void DataBuffer<T>::filter(const uint8_t* f_data, size_t f_size, size_t true_size) {
     size_t src = 0;

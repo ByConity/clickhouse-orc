@@ -301,8 +301,8 @@ RowReaderOptions& RowReaderOptions::setEnableLazyDecoding(bool enable) {
     return *this;
 }
 
-RowReaderOptions& RowReaderOptions::searchArgument(std::unique_ptr<SearchArgument> sargs) {
-    privateBits->sargs = std::move(sargs);
+RowReaderOptions& RowReaderOptions::searchArgument(std::shared_ptr<SearchArgument> sargs) {
+    privateBits->sargs = sargs;
     return *this;
 }
 
