@@ -55,6 +55,7 @@ public:
     struct IORange {
         uint64_t offset;
         uint64_t size;
+        bool is_active;
     };
     enum class PrepareCacheScope { READ_FULL_FILE, READ_FULL_STRIPE, READ_FULL_ROW_INDEX };
 
