@@ -789,14 +789,14 @@ void StringDictionaryColumnReader::next(ColumnVectorBatch& rowBatch, uint64_t nu
                 if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
                     throw ParseError("Entry index out of range in StringDictionaryColumn");
                 }
-                outputStarts[i] = blob + dictionaryOffsets[entry];
-                outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
-                codes[i] = entry;
+                // outputStarts[i] = blob + dictionaryOffsets[entry];
+                // outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
+                codes[i] = entry + 2;
             } else {
                 // use largest index.
-                codes[i] = static_cast<int64_t>(dictionaryCount);
-                outputStarts[i] = nullptr;
-                outputLengths[i] = 0;
+                codes[i] = 0 ;
+                // outputStarts[i] = nullptr;
+                // outputLengths[i] = 0;
             }
         }
     } else {
@@ -805,9 +805,9 @@ void StringDictionaryColumnReader::next(ColumnVectorBatch& rowBatch, uint64_t nu
             if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
                 throw ParseError("Entry index out of range in StringDictionaryColumn");
             }
-            outputStarts[i] = blob + dictionaryOffsets[entry];
-            outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
-            codes[i] = entry;
+            // outputStarts[i] = blob + dictionaryOffsets[entry];
+            // outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
+            codes[i] = entry + 2;
         }
     }
 }

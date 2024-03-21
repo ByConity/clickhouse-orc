@@ -39,9 +39,6 @@
 #include <cstring>
 
 #include "orc/Int128.hh"
-#ifndef __AVX2__
-#define __AVX2__
-#endif
 namespace orc {
 
 MemoryPool::~MemoryPool() {
