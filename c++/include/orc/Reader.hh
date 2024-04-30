@@ -36,6 +36,7 @@
 // clang-format off
 #pragma once
 
+#include <stdint.h>
 #include "orc/BloomFilter.hh"
 #include "orc/Common.hh"
 #include "orc/orc-config.hh"
@@ -325,8 +326,12 @@ public:
     bool getUseWriterTimezone() const;
     RowReaderOptions& includeLazyLoadColumnNames(const std::list<std::string>& include);
     RowReaderOptions& includeLazyLoadColumnIndexes(const std::list<uint64_t>& include);
+    RowReaderOptions& includeLowCardColumnIndexes(const std::list<uint64_t>& include);
+    RowReaderOptions& includeLowCardNullColumnIndexes(const std::list<uint64_t>& include);
     const std::list<std::string>& getLazyLoadColumnNames() const;
     const std::list<uint64_t>& getLazyLoadColumnIndexes() const;
+    const std::list<uint64_t>& getLowCardColumnIndexes() const;
+    const std::list<uint64_t>& getLowCardNullColumnIndexes() const;
 };
 
 class RowReader;
@@ -583,6 +588,12 @@ public:
    */
 class RowReader {
 public:
+    struct UpperTypeHint
+    {
+        bool is_low_card = false;
+        bool is_low_card_null = false;
+    };
+
     struct ReadPosition {
         bool start_new_stripe = false;
         uint64_t stripe_index = 0;
@@ -606,7 +617,7 @@ public:
      */
     virtual const std::vector<bool>& getSelectedColumns() const = 0;
     virtual const std::vector<bool>& getLazyLoadColumns() const = 0;
-
+    virtual const std::vector<UpperTypeHint>& getUpperTypeHint() const =0 ;
     /**
      * Create a row batch for reading the selected columns of this file.
      * @param size the number of rows to read

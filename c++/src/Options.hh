@@ -151,6 +151,8 @@ struct RowReaderOptionsPrivate {
     std::list<uint64_t> lazyLoadColumnIndexes;
     std::list<std::string> includedColumnNames;
     std::list<std::string> lazyLoadColumnNames;
+    std::list<uint64_t> lowCardIndexes;
+    std::list<uint64_t> lowCardNullIndexes;
     uint64_t dataStart;
     uint64_t dataLength;
     bool throwOnHive11DecimalOverflow;
@@ -160,6 +162,8 @@ struct RowReaderOptionsPrivate {
     std::shared_ptr<RowReaderFilter> filter;
     std::string readerTimezone;
     bool useWriterTimezone;
+
+    
 
     RowReaderOptionsPrivate() {
         selection = ColumnSelection_NONE;
@@ -225,6 +229,19 @@ RowReaderOptions& RowReaderOptions::includeLazyLoadColumnIndexes(const std::list
     return *this;
 }
 
+RowReaderOptions& RowReaderOptions::includeLowCardColumnIndexes(const std::list<uint64_t>& include)
+{
+    privateBits->lowCardIndexes.assign(include.begin(),include.end());
+    return *this;
+}
+
+RowReaderOptions& RowReaderOptions::includeLowCardNullColumnIndexes(const std::list<uint64_t>& include)
+{
+    privateBits->lowCardNullIndexes.assign(include.begin(),include.end());
+    return *this;
+}
+
+
 RowReaderOptions& RowReaderOptions::includeTypes(const std::list<uint64_t>& types) {
     privateBits->selection = ColumnSelection_TYPE_IDS;
     privateBits->includedColumnIndexes.assign(types.begin(), types.end());
@@ -264,6 +281,15 @@ const std::list<std::string>& RowReaderOptions::getLazyLoadColumnNames() const {
 
 const std::list<uint64_t>& RowReaderOptions::getLazyLoadColumnIndexes() const {
     return privateBits->lazyLoadColumnIndexes;
+}
+
+const std::list<uint64_t>& RowReaderOptions::getLowCardColumnIndexes() const {
+    return privateBits->lowCardIndexes;
+}
+
+
+const std::list<uint64_t>& RowReaderOptions::getLowCardNullColumnIndexes() const {
+    return privateBits->lowCardNullIndexes;
 }
 
 uint64_t RowReaderOptions::getOffset() const {

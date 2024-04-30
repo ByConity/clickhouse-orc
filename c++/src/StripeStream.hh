@@ -69,7 +69,7 @@ public:
 
     const std::vector<bool>& getSelectedColumns() const override;
     const std::vector<bool>& getLazyLoadColumns() const override;
-
+    const std::vector<RowReader::UpperTypeHint>& getUpperTypeHint() const override;
     proto::ColumnEncoding getEncoding(uint64_t columnId) const override;
 
     std::unique_ptr<SeekableInputStream> getStream(uint64_t columnId, proto::Stream_Kind kind,

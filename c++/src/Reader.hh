@@ -122,6 +122,7 @@ public:
 
     // Select the columns from the RowReaderoptions object
     void updateSelected(std::vector<bool>& selectedColumns, std::vector<bool>& lazyLoadColumns,
+                        std::vector<RowReader::UpperTypeHint> & upper_type_hints, 
                         const RowReaderOptions& options);
 };
 
@@ -137,7 +138,9 @@ private:
     // inputs
     std::vector<bool> selectedColumns;
     std::vector<bool> lazyLoadColumns;
-
+    std::vector<bool> lowCardColumns;
+    std::vector<bool> lowCardNullColumns;
+    std::vector<RowReader::UpperTypeHint> upper_type_hints;
     // footer
     proto::Footer* footer;
     DataBuffer<uint64_t> firstRowOfStripe;
@@ -225,7 +228,7 @@ public:
     // Select the columns from the options object
     const std::vector<bool>& getSelectedColumns() const override;
     const std::vector<bool>& getLazyLoadColumns() const override;
-
+    const std::vector<UpperTypeHint>& getUpperTypeHint() const override;
     const Type& getSelectedType() const override;
 
     std::unique_ptr<ColumnVectorBatch> createRowBatch(uint64_t size) const override;

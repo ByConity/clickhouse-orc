@@ -45,6 +45,8 @@
 #include "RLE.hh"
 #include "orc/Exceptions.hh"
 #include "orc/Int128.hh"
+#include "orc/Reader.hh"
+#include "orc/Type.hh"
 
 namespace orc {
 
@@ -687,8 +689,9 @@ private:
     std::unique_ptr<SeekableInputStream> blobStream;
     uint32_t dictSize = 0;
     bool dictionaryLoaded = false;
+    uint32_t codes_offset = 0;
 
-public:
+   public:
     StringDictionaryColumnReader(const Type& type, StripeStreams& stipe);
     ~StringDictionaryColumnReader() override;
 
@@ -727,6 +730,18 @@ StringDictionaryColumnReader::StringDictionaryColumnReader(const Type& type, Str
             createRleDecoder(std::move(stream), false, rleVersion, memoryPool, metrics, stripe.getSharedBuffer());
     blobStream = stripe.getStream(columnId, proto::Stream_Kind_DICTIONARY_DATA, false);
     dictionaryLoaded = false;
+
+    // use type information from CK for optimization
+    {
+      const auto& type_hints = stripe.getUpperTypeHint()[type.getColumnId()];
+      if (type_hints.is_low_card) {
+        codes_offset = 1;
+      } else if (type_hints.is_low_card_null) {
+        codes_offset = 2;
+      } else {
+        codes_offset = 0;
+      }
+    }
 }
 
 void StringDictionaryColumnReader::loadDictionary() {
@@ -740,6 +755,8 @@ void StringDictionaryColumnReader::loadDictionary() {
     for (uint32_t i = 1; i < dictSize + 1; ++i) {
         if (lengthArray[i] < 0) {
             throw ParseError("Negative dictionary entry length");
+        } else if (lengthArray[i] == 0) {
+          dictionary->empty_string_loc = i - 1;
         }
         lengthArray[i] += lengthArray[i - 1];
     }
@@ -778,37 +795,99 @@ void StringDictionaryColumnReader::next(ColumnVectorBatch& rowBatch, uint64_t nu
     if (byteBatch.codes.capacity() < numValues) {
         byteBatch.codes.reserve(numValues);
     }
+    byteBatch.use_type_hint = codes_offset > 0;
 
     byteBatch.dictionary = this->dictionary;
 
+    int64_t empty_string_loc = this->dictionary->empty_string_loc;
     int64_t* codes = byteBatch.codes.data();
-    if (notNull) {
+    if (codes_offset &&   this->dictionary->empty_string_loc == -1) {  // use_low_cards
+      if (notNull) {
         for (uint64_t i = 0; i < numValues; ++i) {
-            if (notNull[i]) {
-                int64_t entry = outputLengths[i];
-                if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
-                    throw ParseError("Entry index out of range in StringDictionaryColumn");
-                }
-                // outputStarts[i] = blob + dictionaryOffsets[entry];
-                // outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
-                codes[i] = entry + 2;
-            } else {
-                // use largest index.
-                codes[i] = 0 ;
-                // outputStarts[i] = nullptr;
-                // outputLengths[i] = 0;
-            }
-        }
-    } else {
-        for (uint64_t i = 0; i < numValues; ++i) {
+          if (notNull[i]) {
             int64_t entry = outputLengths[i];
             if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
-                throw ParseError("Entry index out of range in StringDictionaryColumn");
+              throw ParseError("Entry index out of range in StringDictionaryColumn");
             }
-            // outputStarts[i] = blob + dictionaryOffsets[entry];
-            // outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
-            codes[i] = entry + 2;
+            codes[i] = entry + codes_offset;
+          } else {
+            codes[i] = 0;
+          }
         }
+      } else {  // no nulls.
+        for (uint64_t i = 0; i < numValues; ++i) {
+          int64_t entry = outputLengths[i];
+          if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
+            throw ParseError("Entry index out of range in StringDictionaryColumn");
+          }
+          codes[i] = entry + codes_offset;
+        }
+      }
+    } else if (codes_offset) {
+      if (notNull) {
+        for (uint64_t i = 0; i < numValues; ++i) {
+          if (notNull[i]) {
+            int64_t entry = outputLengths[i];
+            if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
+              throw ParseError("Entry index out of range in StringDictionaryColumn");
+            }
+            if (entry < empty_string_loc) {
+              codes[i] = entry + codes_offset;
+            } else if (entry == empty_string_loc) {
+              codes[i] = codes_offset - 1;
+            } else {
+              codes[i] = entry + codes_offset - 1;
+            }
+
+          } else {
+            codes[i] = 0;
+          }
+        }
+      } else {  // no nulls.
+        for (uint64_t i = 0; i < numValues; ++i) {
+          int64_t entry = outputLengths[i];
+          if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
+            throw ParseError("Entry index out of range in StringDictionaryColumn");
+          }
+          if (entry < empty_string_loc) {
+            codes[i] = entry + codes_offset;
+          } else if (entry == empty_string_loc) {
+            codes[i] = codes_offset - 1;
+          } else {
+            codes[i] = entry + codes_offset - 1;
+          }
+        }
+      }
+    } else {  // use plain string in ck.
+      if (notNull) {
+        for (uint64_t i = 0; i < numValues; ++i) {
+          if (notNull[i]) {
+            int64_t entry = outputLengths[i];
+            if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
+              throw ParseError("Entry index out of range in StringDictionaryColumn");
+            }
+            outputStarts[i] = blob + dictionaryOffsets[entry];
+            outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
+
+            codes[i] = entry;
+          } else {
+            codes[i] = static_cast<int64_t>(dictionaryCount);
+            outputStarts[i] = nullptr;
+            outputLengths[i] = 0;
+          }
+        }
+      } else {  // no nulls.
+
+        for (uint64_t i = 0; i < numValues; ++i) {
+          int64_t entry = outputLengths[i];
+          if (entry < 0 || static_cast<uint64_t>(entry) >= dictionaryCount) {
+            throw ParseError("Entry index out of range in StringDictionaryColumn");
+          }
+          outputStarts[i] = blob + dictionaryOffsets[entry];
+          outputLengths[i] = dictionaryOffsets[entry + 1] - dictionaryOffsets[entry];
+          codes[i] = entry;
+        }
+      }
     }
 }
 
@@ -836,7 +915,7 @@ private:
     std::unique_ptr<SeekableInputStream> blobStream;
     const char* lastBuffer;
     size_t lastBufferLength;
-
+    std::vector<RowReader::UpperTypeHint> upper_type_hints;
     /**
      * Compute the total length of the values.
      * @param lengths the array of lengths
@@ -858,15 +937,17 @@ public:
 };
 
 StringDirectColumnReader::StringDirectColumnReader(const Type& type, StripeStreams& stripe)
-        : ColumnReader(type, stripe) {
-    RleVersion rleVersion = convertRleVersion(stripe.getEncoding(columnId).kind());
-    std::unique_ptr<SeekableInputStream> stream = stripe.getStream(columnId, proto::Stream_Kind_LENGTH, true);
-    if (stream == nullptr) throw ParseError("LENGTH stream not found in StringDirectColumn");
-    lengthRle = createRleDecoder(std::move(stream), false, rleVersion, memoryPool, metrics, stripe.getSharedBuffer());
-    blobStream = stripe.getStream(columnId, proto::Stream_Kind_DATA, true);
-    if (blobStream == nullptr) throw ParseError("DATA stream not found in StringDirectColumn");
-    lastBuffer = nullptr;
-    lastBufferLength = 0;
+    : ColumnReader(type, stripe), upper_type_hints(stripe.getUpperTypeHint()) {
+  RleVersion rleVersion = convertRleVersion(stripe.getEncoding(columnId).kind());
+  std::unique_ptr<SeekableInputStream> stream =
+      stripe.getStream(columnId, proto::Stream_Kind_LENGTH, true);
+  if (stream == nullptr) throw ParseError("LENGTH stream not found in StringDirectColumn");
+  lengthRle = createRleDecoder(std::move(stream), false, rleVersion, memoryPool, metrics,
+                               stripe.getSharedBuffer());
+  blobStream = stripe.getStream(columnId, proto::Stream_Kind_DATA, true);
+  if (blobStream == nullptr) throw ParseError("DATA stream not found in StringDirectColumn");
+  lastBuffer = nullptr;
+  lastBufferLength = 0;
 }
 
 StringDirectColumnReader::~StringDirectColumnReader() {

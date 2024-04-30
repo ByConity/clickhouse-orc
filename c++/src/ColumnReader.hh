@@ -57,7 +57,7 @@ public:
      */
     virtual const std::vector<bool>& getSelectedColumns() const = 0;
     virtual const std::vector<bool>& getLazyLoadColumns() const = 0;
-
+    virtual const std::vector<RowReader::UpperTypeHint>& getUpperTypeHint() const = 0;
     /**
      * Get the encoding for the given column for this stripe.
      */

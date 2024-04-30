@@ -164,10 +164,13 @@ void ColumnSelector::buildTypeNameIdMap(const Type* type) {
 }
 
 void ColumnSelector::updateSelected(std::vector<bool>& selectedColumns, std::vector<bool>& lazyLoadColumns,
+                                    std::vector<RowReader::UpperTypeHint>& type_hints,
                                     const RowReaderOptions& options) {
     selectedColumns.assign(static_cast<size_t>(contents->footer->types_size()), false);
     lazyLoadColumns.assign(static_cast<size_t>(contents->footer->types_size()), false);
-
+    std::vector<bool> lowCardColumns(static_cast<size_t>(contents->footer->types_size()), false);
+    std::vector<bool> lowCardNullColumns(static_cast<size_t>(contents->footer->types_size()), false);
+    type_hints.assign(static_cast<size_t>(contents->footer->types_size()), {});
     if (contents->schema->getKind() == STRUCT && options.getIndexesSet()) {
         for (unsigned long field : options.getInclude()) {
             updateSelectedByFieldId(selectedColumns, field);
@@ -186,6 +189,18 @@ void ColumnSelector::updateSelected(std::vector<bool>& selectedColumns, std::vec
         for (unsigned long typeId : options.getLazyLoadColumnIndexes()) {
             updateSelectedByTypeId(lazyLoadColumns, typeId);
         }
+        for (unsigned long typeId : options.getLowCardColumnIndexes()) {
+            updateSelectedByTypeId(lowCardColumns, typeId);
+        }
+        for (unsigned long typeId : options.getLowCardNullColumnIndexes()) {
+            updateSelectedByTypeId(lowCardNullColumns, typeId);
+        }
+        for(size_t i = 0; i < lowCardColumns.size(); i++)
+        {
+            type_hints[i].is_low_card = lowCardColumns[i];
+            type_hints[i].is_low_card_null = lowCardNullColumns[i];
+        }
+
     } else {
         // default is to select all columns
         std::fill(selectedColumns.begin(), selectedColumns.end(), true);
@@ -289,7 +304,7 @@ RowReaderImpl::RowReaderImpl(const std::shared_ptr<FileContents>& _contents, con
     }
 
     ColumnSelector column_selector(contents.get());
-    column_selector.updateSelected(selectedColumns, lazyLoadColumns, opts);
+    column_selector.updateSelected(selectedColumns, lazyLoadColumns, upper_type_hints, opts);
 
     // prepare SargsApplier if SearchArgument is available
     if (opts.getSearchArgument() && footer->rowindexstride() > 0) {
@@ -342,6 +357,9 @@ const std::vector<bool>& RowReaderImpl::getSelectedColumns() const {
 
 const std::vector<bool>& RowReaderImpl::getLazyLoadColumns() const {
     return lazyLoadColumns;
+}
+const std::vector<RowReader::UpperTypeHint>& RowReaderImpl::getUpperTypeHint() const {
+    return upper_type_hints; 
 }
 
 const Type& RowReaderImpl::getSelectedType() const {

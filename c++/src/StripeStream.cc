@@ -83,6 +83,9 @@ const std::vector<bool>& StripeStreamsImpl::getSelectedColumns() const {
 const std::vector<bool>& StripeStreamsImpl::getLazyLoadColumns() const {
     return reader.getLazyLoadColumns();
 }
+const std::vector<RowReader::UpperTypeHint>& StripeStreamsImpl::getUpperTypeHint() const {
+    return reader.getUpperTypeHint();
+}
 
 proto::ColumnEncoding StripeStreamsImpl::getEncoding(uint64_t columnId) const {
     return footer.columns(static_cast<int>(columnId));

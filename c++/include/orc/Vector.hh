@@ -143,6 +143,7 @@ struct StringDictionary {
 
     // Offset for each dictionary key entry.
     DataBuffer<int64_t> dictionaryOffset;
+    int64_t empty_string_loc = -1;
 
     void getValueByIndex(int64_t index, char*& valPtr, int64_t& length) {
         if (index < 0 || static_cast<uint64_t>(index) + 1 >= dictionaryOffset.size()) {
@@ -155,6 +156,7 @@ struct StringDictionary {
         length = offsetPtr[index + 1] - offsetPtr[index];
     }
 };
+
 
 struct StringVectorBatch : public ColumnVectorBatch {
     StringVectorBatch(uint64_t capacity, MemoryPool& pool);
@@ -173,6 +175,7 @@ struct StringVectorBatch : public ColumnVectorBatch {
     // dict codes, iff. there is dictionary.
     DataBuffer<int64_t> codes;
     bool use_codes;
+    bool use_type_hint = false;;
     std::shared_ptr<StringDictionary> dictionary;
     void filter(uint8_t* f_data, uint32_t f_size, uint32_t true_size) override;
 };

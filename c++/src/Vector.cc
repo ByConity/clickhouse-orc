@@ -225,6 +225,8 @@ void StringVectorBatch::resize(uint64_t cap) {
 
 void StringVectorBatch::clear() {
     numElements = 0;
+    use_codes = false;
+    use_type_hint= false;
 }
 
 uint64_t StringVectorBatch::getMemoryUsage() {
