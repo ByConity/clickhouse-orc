@@ -695,12 +695,12 @@ namespace orc {
       }
     }
 
-    bool allNull = colStats.hasnull() && colStats.numberofvalues() == 0;
+    bool allNull = colStats.has_hasnull() && colStats.hasnull() && colStats.numberofvalues() == 0;
     if (mOperator == Operator::IS_NULL ||
         ((mOperator == Operator::EQUALS || mOperator == Operator::NULL_SAFE_EQUALS) &&
          mLiterals.at(0).isNull())) {
       // IS_NULL operator does not need to check min/max stats and bloom filter
-      return allNull ? TruthValue::YES : (colStats.hasnull() ? TruthValue::YES_NO : TruthValue::NO);
+      return allNull ? TruthValue::YES : (colStats.has_hasnull() ? (colStats.hasnull()? TruthValue::YES_NO:TruthValue::NO) : TruthValue::YES_NO_NULL);
     } else if (allNull) {
       // if we don't have any value, everything must have been null
       return TruthValue::IS_NULL;
